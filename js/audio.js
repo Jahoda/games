@@ -7,6 +7,7 @@ class AudioManager {
         this.masterVolume = 0.5;
         this.sounds = {};
         this.initialized = false;
+        this.reloadTimers = []; // Track reload sound timers
     }
 
     init() {
@@ -114,15 +115,16 @@ class AudioManager {
     playReload() {
         if (!this.initialized) return;
 
-        const ctx = this.context;
-        const now = ctx.currentTime;
+        // Clear previous reload timers
+        this.reloadTimers.forEach(t => clearTimeout(t));
+        this.reloadTimers = [];
 
         // Magazine out click
-        setTimeout(() => this.playClick(800, 0.05), 100);
+        this.reloadTimers.push(setTimeout(() => this.playClick(800, 0.05), 100));
         // Magazine in click
-        setTimeout(() => this.playClick(1000, 0.08), 400);
+        this.reloadTimers.push(setTimeout(() => this.playClick(1000, 0.08), 400));
         // Chamber sound
-        setTimeout(() => this.playClick(600, 0.1), 700);
+        this.reloadTimers.push(setTimeout(() => this.playClick(600, 0.1), 700));
     }
 
     playClick(freq, duration) {

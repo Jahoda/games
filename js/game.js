@@ -67,6 +67,19 @@ class Game {
         // Kill feed
         this.killFeed = [];
         this.maxKillFeed = 5;
+        this.killFeedDirty = true; // Only update DOM when changed
+
+        // Timers (for cleanup)
+        this.activeTimers = [];
+        this.hitMarkerTimer = null;
+        this.roundEndTimer = null;
+
+        // Bind game loop once to avoid creating new closures
+        this.boundGameLoop = this.gameLoop.bind(this);
+
+        // Radar canvas context (cache it)
+        this.radarCanvas = null;
+        this.radarCtx = null;
 
         // Initialize
         this.setupEventListeners();
@@ -179,8 +192,8 @@ class Game {
         // Play round start sound
         Audio.playRoundStart();
 
-        // Start game loop
-        requestAnimationFrame((time) => this.gameLoop(time));
+        // Start game loop (use bound function to avoid creating closures)
+        requestAnimationFrame(this.boundGameLoop);
     }
 
     setupBots(playerTeam) {
@@ -255,8 +268,14 @@ class Game {
 
         this.ui.roundEnd.classList.remove('hidden');
 
+        // Clear previous timer if exists
+        if (this.roundEndTimer) {
+            clearTimeout(this.roundEndTimer);
+        }
+
         // Start next round after delay
-        setTimeout(() => {
+        this.roundEndTimer = setTimeout(() => {
+            this.roundEndTimer = null;
             this.roundNumber++;
             if (this.roundNumber > this.maxRounds ||
                 this.ctScore > this.maxRounds / 2 ||
@@ -271,6 +290,22 @@ class Game {
 
     endGame() {
         this.state = GameState.GAME_OVER;
+        this.isRunning = false;
+
+        // Clear all timers
+        if (this.hitMarkerTimer) {
+            clearTimeout(this.hitMarkerTimer);
+            this.hitMarkerTimer = null;
+        }
+        if (this.roundEndTimer) {
+            clearTimeout(this.roundEndTimer);
+            this.roundEndTimer = null;
+        }
+
+        // Clear kill feed
+        this.killFeed = [];
+        this.killFeedDirty = true;
+
         this.showMainMenu();
     }
 
@@ -316,8 +351,8 @@ class Game {
         // Render
         this.render();
 
-        // Next frame
-        requestAnimationFrame((time) => this.gameLoop(time));
+        // Next frame (use bound function to avoid creating closures each frame)
+        requestAnimationFrame(this.boundGameLoop);
     }
 
     update() {
@@ -457,7 +492,15 @@ class Game {
     showHitMarker() {
         const hitMarker = document.getElementById('hit-marker');
         hitMarker.classList.add('show');
-        setTimeout(() => hitMarker.classList.remove('show'), 100);
+
+        // Clear previous timer to avoid stacking
+        if (this.hitMarkerTimer) {
+            clearTimeout(this.hitMarkerTimer);
+        }
+        this.hitMarkerTimer = setTimeout(() => {
+            hitMarker.classList.remove('show');
+            this.hitMarkerTimer = null;
+        }, 100);
     }
 
     addKillFeed(killer, victim, weapon, headshot) {
@@ -473,14 +516,29 @@ class Game {
         if (this.killFeed.length > this.maxKillFeed) {
             this.killFeed.pop();
         }
+
+        // Mark as dirty so DOM gets updated
+        this.killFeedDirty = true;
     }
 
     updateKillFeed() {
+        const now = performance.now();
+        const oldLength = this.killFeed.length;
+
+        // Filter expired entries
+        this.killFeed = this.killFeed.filter(entry => now - entry.time < 5000);
+
+        // Check if anything changed
+        if (this.killFeed.length !== oldLength) {
+            this.killFeedDirty = true;
+        }
+
+        // Only update DOM when necessary
+        if (!this.killFeedDirty) return;
+        this.killFeedDirty = false;
+
         const feedEl = document.getElementById('kill-feed');
         feedEl.innerHTML = '';
-
-        const now = performance.now();
-        this.killFeed = this.killFeed.filter(entry => now - entry.time < 5000);
 
         this.killFeed.forEach(entry => {
             const div = document.createElement('div');
@@ -514,15 +572,21 @@ class Game {
     }
 
     renderRadar() {
-        const radarCanvas = document.getElementById('radar-canvas');
-        const ctx = radarCanvas.getContext('2d');
+        // Cache radar canvas and context
+        if (!this.radarCanvas) {
+            this.radarCanvas = document.getElementById('radar-canvas');
+            this.radarCtx = this.radarCanvas.getContext('2d');
+            // Set size only once
+            this.radarCanvas.width = 150;
+            this.radarCanvas.height = 150;
+        }
 
-        radarCanvas.width = 150;
-        radarCanvas.height = 150;
+        // Clear radar (don't resize - that causes memory allocation)
+        this.radarCtx.clearRect(0, 0, 150, 150);
 
         // Draw map on radar
         this.map.drawMinimap(
-            ctx,
+            this.radarCtx,
             this.player.x,
             this.player.y,
             this.player.angle,

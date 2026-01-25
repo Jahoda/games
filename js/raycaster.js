@@ -19,15 +19,21 @@ class Raycaster {
         this.maxRenderDistance = 2000;
         this.wallHeight = 64;
 
-        // Z-buffer for sprite rendering
-        this.zBuffer = new Array(this.numRays);
+        // Z-buffer for sprite rendering (pre-allocate max size)
+        this.zBuffer = new Float32Array(2048);
+        this.zBufferSize = this.numRays;
 
         // Textures (procedurally generated)
         this.textures = {};
         this.generateTextures();
 
-        // Sprite rendering
+        // Sprite rendering (reuse array)
         this.sprites = [];
+
+        // Cached gradients (will be created on first use/resize)
+        this.ceilingGradient = null;
+        this.floorGradient = null;
+        this.gradientsDirty = true;
     }
 
     resize(width, height) {
@@ -37,7 +43,15 @@ class Raycaster {
         this.canvas.height = height;
         this.numRays = Math.floor(width / 2);
         this.rayAngleStep = this.fov / this.numRays;
-        this.zBuffer = new Array(this.numRays);
+        this.zBufferSize = this.numRays;
+
+        // Reallocate z-buffer only if needed
+        if (this.numRays > this.zBuffer.length) {
+            this.zBuffer = new Float32Array(this.numRays);
+        }
+
+        // Mark gradients for recreation
+        this.gradientsDirty = true;
     }
 
     generateTextures() {
@@ -173,20 +187,25 @@ class Raycaster {
     }
 
     drawCeiling(ctx, player) {
-        const gradient = ctx.createLinearGradient(0, 0, 0, this.height / 2);
-        gradient.addColorStop(0, '#111');
-        gradient.addColorStop(1, '#2a2a2a');
+        // Recreate gradients only when size changes
+        if (this.gradientsDirty) {
+            this.ceilingGradient = ctx.createLinearGradient(0, 0, 0, this.height / 2);
+            this.ceilingGradient.addColorStop(0, '#111');
+            this.ceilingGradient.addColorStop(1, '#2a2a2a');
 
-        ctx.fillStyle = gradient;
+            this.floorGradient = ctx.createLinearGradient(0, this.height / 2, 0, this.height);
+            this.floorGradient.addColorStop(0, '#3a3a3a');
+            this.floorGradient.addColorStop(1, '#1a1a1a');
+
+            this.gradientsDirty = false;
+        }
+
+        ctx.fillStyle = this.ceilingGradient;
         ctx.fillRect(0, 0, this.width, this.height / 2);
     }
 
     drawFloor(ctx, player, map) {
-        const gradient = ctx.createLinearGradient(0, this.height / 2, 0, this.height);
-        gradient.addColorStop(0, '#3a3a3a');
-        gradient.addColorStop(1, '#1a1a1a');
-
-        ctx.fillStyle = gradient;
+        ctx.fillStyle = this.floorGradient;
         ctx.fillRect(0, this.height / 2, this.width, this.height / 2);
     }
 
@@ -245,17 +264,19 @@ class Raycaster {
     }
 
     collectSprites(player, entities) {
-        this.sprites = [];
+        // Clear array without creating new one
+        this.sprites.length = 0;
 
-        entities.forEach(entity => {
-            if (!entity.isAlive) return;
-            if (entity === player) return;
+        for (let i = 0; i < entities.length; i++) {
+            const entity = entities[i];
+            if (!entity.isAlive) continue;
+            if (entity === player) continue;
 
             const dx = entity.x - player.x;
             const dy = entity.y - player.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            if (distance > this.maxRenderDistance) return;
+            if (distance > this.maxRenderDistance) continue;
 
             // Calculate angle to entity
             const angle = Math.atan2(dy, dx);
@@ -273,7 +294,7 @@ class Raycaster {
                     angle: relativeAngle
                 });
             }
-        });
+        }
 
         // Sort by distance (far to near)
         this.sprites.sort((a, b) => b.distance - a.distance);
