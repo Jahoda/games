@@ -3,161 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Counter-Strike 1.5 Clone</title>
+    <title>RC Revolt - RC Car Racing Game</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div id="game-container">
         <!-- Main Menu -->
-        <div id="main-menu" class="menu">
-            <h1>COUNTER-STRIKE</h1>
-            <h2>v1.5 Clone</h2>
-            <div class="menu-buttons">
-                <button id="btn-new-game">NOVÁ HRA</button>
-                <button id="btn-controls">OVLÁDÁNÍ</button>
-                <button id="btn-options">NASTAVENÍ</button>
+        <div id="main-menu" class="menu-screen">
+            <div class="menu-content">
+                <h1 class="game-title">
+                    <span class="title-rc">RC</span>
+                    <span class="title-revolt">REVOLT</span>
+                </h1>
+                <p class="subtitle">Radio Control Racing</p>
+
+                <div class="menu-buttons">
+                    <button id="btn-single-race" class="menu-btn">
+                        <span class="btn-icon">🏎️</span>
+                        Rychlý závod
+                    </button>
+                    <button id="btn-championship" class="menu-btn">
+                        <span class="btn-icon">🏆</span>
+                        Šampionát
+                    </button>
+                    <button id="btn-time-trial" class="menu-btn">
+                        <span class="btn-icon">⏱️</span>
+                        Časovka
+                    </button>
+                    <button id="btn-battle" class="menu-btn">
+                        <span class="btn-icon">💥</span>
+                        Battle Aréna
+                    </button>
+                    <button id="btn-garage" class="menu-btn">
+                        <span class="btn-icon">🔧</span>
+                        Garáž
+                    </button>
+                    <button id="btn-settings" class="menu-btn">
+                        <span class="btn-icon">⚙️</span>
+                        Nastavení
+                    </button>
+                </div>
+
+                <div class="menu-footer">
+                    <p>Ovládání: WASD/Šipky - Řízení | SPACE - Brzda | E - Power-up | R - Reset</p>
+                </div>
             </div>
         </div>
 
-        <!-- Team Selection -->
-        <div id="team-select" class="menu hidden">
-            <h2>VYBER TÝM</h2>
-            <div class="team-buttons">
-                <button id="btn-ct" class="team-btn ct">
-                    <span class="team-name">COUNTER-TERRORISTS</span>
-                    <span class="team-desc">Speciální jednotky</span>
-                </button>
-                <button id="btn-t" class="team-btn t">
-                    <span class="team-name">TERRORISTS</span>
-                    <span class="team-desc">Teroristé</span>
-                </button>
-            </div>
-            <button id="btn-back-main" class="back-btn">ZPĚT</button>
-        </div>
-
-        <!-- Controls Info -->
-        <div id="controls-menu" class="menu hidden">
-            <h2>OVLÁDÁNÍ</h2>
-            <div class="controls-list">
-                <div class="control-item"><span>W, A, S, D</span> - Pohyb</div>
-                <div class="control-item"><span>MYŠ</span> - Rozhlížení</div>
-                <div class="control-item"><span>LEVÉ TLAČÍTKO</span> - Střelba</div>
-                <div class="control-item"><span>R</span> - Přebití</div>
-                <div class="control-item"><span>B</span> - Nákup zbraní</div>
-                <div class="control-item"><span>1, 2, 3, 4</span> - Výběr zbraně</div>
-                <div class="control-item"><span>SHIFT</span> - Chůze (tichý pohyb)</div>
-                <div class="control-item"><span>CTRL</span> - Dřep</div>
-                <div class="control-item"><span>SPACE</span> - Skok</div>
-                <div class="control-item"><span>TAB</span> - Skóre</div>
-                <div class="control-item"><span>ESC</span> - Menu</div>
-            </div>
-            <button id="btn-back-controls" class="back-btn">ZPĚT</button>
-        </div>
-
-        <!-- Buy Menu -->
-        <div id="buy-menu" class="menu hidden">
-            <h2>NÁKUP ZBRANÍ</h2>
-            <div class="buy-categories">
-                <div class="buy-category">
-                    <h3>PISTOLE</h3>
-                    <button class="buy-item" data-weapon="glock" data-price="400">Glock 18 - $400</button>
-                    <button class="buy-item" data-weapon="usp" data-price="500">USP - $500</button>
-                    <button class="buy-item" data-weapon="deagle" data-price="650">Desert Eagle - $650</button>
+        <!-- Car Selection Screen -->
+        <div id="car-select" class="menu-screen hidden">
+            <div class="menu-content">
+                <h2>Vyber si autíčko</h2>
+                <div id="car-carousel" class="car-carousel">
+                    <!-- Cars will be added dynamically -->
                 </div>
-                <div class="buy-category">
-                    <h3>PUŠKY</h3>
-                    <button class="buy-item" data-weapon="ak47" data-price="2500">AK-47 - $2500</button>
-                    <button class="buy-item" data-weapon="m4a1" data-price="3100">M4A1 - $3100</button>
-                    <button class="buy-item" data-weapon="awp" data-price="4750">AWP - $4750</button>
-                    <button class="buy-item" data-weapon="mp5" data-price="1500">MP5 - $1500</button>
-                </div>
-                <div class="buy-category">
-                    <h3>VYBAVENÍ</h3>
-                    <button class="buy-item" data-weapon="kevlar" data-price="650">Kevlar - $650</button>
-                    <button class="buy-item" data-weapon="helmet" data-price="1000">Kevlar + Helma - $1000</button>
-                    <button class="buy-item" data-weapon="defuse" data-price="200">Defuse Kit - $200</button>
-                </div>
-            </div>
-            <div class="buy-footer">
-                <span id="player-money">$800</span>
-                <button id="btn-close-buy">ZAVŘÍT [B]</button>
-            </div>
-        </div>
-
-        <!-- Scoreboard -->
-        <div id="scoreboard" class="hidden">
-            <h2>SKÓRE</h2>
-            <div class="score-teams">
-                <div class="score-team ct">
-                    <h3>Counter-Terrorists</h3>
-                    <div id="ct-score">0</div>
-                </div>
-                <div class="score-team t">
-                    <h3>Terrorists</h3>
-                    <div id="t-score">0</div>
-                </div>
-            </div>
-            <div id="player-list"></div>
-        </div>
-
-        <!-- Game Canvas -->
-        <canvas id="game-canvas"></canvas>
-
-        <!-- HUD -->
-        <div id="hud" class="hidden">
-            <div id="hud-top">
-                <div id="round-timer">1:45</div>
-                <div id="round-info">
-                    <span id="ct-rounds">0</span> - <span id="t-rounds">0</span>
-                </div>
-            </div>
-            <div id="radar">
-                <canvas id="radar-canvas"></canvas>
-            </div>
-            <div id="hud-bottom">
-                <div id="health-armor">
-                    <div class="hud-item">
-                        <span class="hud-icon">+</span>
-                        <span id="health">100</span>
+                <div id="car-stats" class="car-stats">
+                    <div class="stat-row">
+                        <span class="stat-label">Rychlost:</span>
+                        <div class="stat-bar"><div id="stat-speed" class="stat-fill"></div></div>
                     </div>
-                    <div class="hud-item">
-                        <span class="hud-icon">◈</span>
-                        <span id="armor">0</span>
+                    <div class="stat-row">
+                        <span class="stat-label">Zrychlení:</span>
+                        <div class="stat-bar"><div id="stat-accel" class="stat-fill"></div></div>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Hmotnost:</span>
+                        <div class="stat-bar"><div id="stat-weight" class="stat-fill"></div></div>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Ovládání:</span>
+                        <div class="stat-bar"><div id="stat-handling" class="stat-fill"></div></div>
                     </div>
                 </div>
-                <div id="ammo">
-                    <span id="ammo-clip">30</span> / <span id="ammo-reserve">90</span>
+                <div class="select-buttons">
+                    <button id="btn-prev-car" class="nav-btn">◀</button>
+                    <button id="btn-select-car" class="menu-btn primary">Vybrat</button>
+                    <button id="btn-next-car" class="nav-btn">▶</button>
                 </div>
-                <div id="money">$800</div>
+                <button id="btn-back-car" class="menu-btn back-btn">Zpět</button>
             </div>
-            <div id="crosshair"></div>
-            <div id="hit-marker" class="hidden"></div>
-            <div id="damage-overlay" class="hidden"></div>
-            <div id="kill-feed"></div>
         </div>
 
-        <!-- Death Screen -->
-        <div id="death-screen" class="hidden">
-            <h2>ZABIT</h2>
-            <p>Zabil tě: <span id="killer-name">Enemy</span></p>
-            <p>Zbraň: <span id="killer-weapon">AK-47</span></p>
-            <p>Respawn za: <span id="respawn-timer">5</span>s</p>
+        <!-- Track Selection Screen -->
+        <div id="track-select" class="menu-screen hidden">
+            <div class="menu-content">
+                <h2>Vyber trať</h2>
+                <div id="track-list" class="track-list">
+                    <!-- Tracks will be added dynamically -->
+                </div>
+                <div id="track-preview" class="track-preview">
+                    <canvas id="track-preview-canvas" width="300" height="200"></canvas>
+                    <div id="track-info" class="track-info">
+                        <h3 id="track-name">-</h3>
+                        <p id="track-desc">-</p>
+                        <p>Kol: <span id="track-laps">3</span></p>
+                    </div>
+                </div>
+                <div class="select-buttons">
+                    <button id="btn-start-race" class="menu-btn primary">Start</button>
+                </div>
+                <button id="btn-back-track" class="menu-btn back-btn">Zpět</button>
+            </div>
         </div>
 
-        <!-- Round End -->
-        <div id="round-end" class="hidden">
-            <h2 id="round-winner"></h2>
-            <p id="round-reason"></p>
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="menu-screen hidden">
+            <div class="menu-content">
+                <h2>Nastavení</h2>
+                <div class="settings-list">
+                    <div class="setting-row">
+                        <label>Hlasitost zvuků:</label>
+                        <input type="range" id="sfx-volume" min="0" max="100" value="70">
+                    </div>
+                    <div class="setting-row">
+                        <label>Hlasitost hudby:</label>
+                        <input type="range" id="music-volume" min="0" max="100" value="50">
+                    </div>
+                    <div class="setting-row">
+                        <label>Počet soupeřů:</label>
+                        <select id="opponent-count">
+                            <option value="3">3</option>
+                            <option value="5" selected>5</option>
+                            <option value="7">7</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <label>Obtížnost AI:</label>
+                        <select id="ai-difficulty">
+                            <option value="easy">Lehká</option>
+                            <option value="medium" selected>Střední</option>
+                            <option value="hard">Těžká</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <label>Kvalita grafiky:</label>
+                        <select id="graphics-quality">
+                            <option value="low">Nízká</option>
+                            <option value="medium" selected>Střední</option>
+                            <option value="high">Vysoká</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="btn-back-settings" class="menu-btn back-btn">Zpět</button>
+            </div>
+        </div>
+
+        <!-- Garage Screen -->
+        <div id="garage-screen" class="menu-screen hidden">
+            <div class="menu-content">
+                <h2>Garáž</h2>
+                <div class="garage-container">
+                    <canvas id="garage-canvas" width="400" height="300"></canvas>
+                    <div class="garage-controls">
+                        <h3 id="garage-car-name">-</h3>
+                        <div class="color-picker">
+                            <label>Barva:</label>
+                            <div class="color-options">
+                                <button class="color-btn" data-color="#ff0000" style="background:#ff0000"></button>
+                                <button class="color-btn" data-color="#00ff00" style="background:#00ff00"></button>
+                                <button class="color-btn" data-color="#0000ff" style="background:#0000ff"></button>
+                                <button class="color-btn" data-color="#ffff00" style="background:#ffff00"></button>
+                                <button class="color-btn" data-color="#ff00ff" style="background:#ff00ff"></button>
+                                <button class="color-btn" data-color="#00ffff" style="background:#00ffff"></button>
+                                <button class="color-btn" data-color="#ffffff" style="background:#ffffff"></button>
+                                <button class="color-btn" data-color="#ff8800" style="background:#ff8800"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button id="btn-back-garage" class="menu-btn back-btn">Zpět</button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden">
+            <canvas id="game-canvas"></canvas>
+
+            <!-- HUD -->
+            <div id="hud">
+                <div id="hud-top">
+                    <div id="position-display">
+                        <span id="current-position">1</span>/<span id="total-racers">6</span>
+                    </div>
+                    <div id="lap-display">
+                        Kolo: <span id="current-lap">1</span>/<span id="total-laps">3</span>
+                    </div>
+                    <div id="time-display">
+                        <span id="race-time">00:00.000</span>
+                    </div>
+                </div>
+
+                <div id="hud-bottom">
+                    <div id="speedometer">
+                        <div id="speed-needle"></div>
+                        <span id="speed-value">0</span>
+                        <span class="speed-unit">km/h</span>
+                    </div>
+                    <div id="powerup-slot">
+                        <div id="powerup-icon"></div>
+                    </div>
+                    <div id="minimap">
+                        <canvas id="minimap-canvas" width="150" height="150"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Countdown -->
+            <div id="countdown" class="hidden">
+                <span id="countdown-text">3</span>
+            </div>
+
+            <!-- Race Results -->
+            <div id="race-results" class="hidden">
+                <div class="results-content">
+                    <h2 id="results-title">Výsledky závodu</h2>
+                    <table id="results-table">
+                        <thead>
+                            <tr>
+                                <th>Pozice</th>
+                                <th>Jezdec</th>
+                                <th>Čas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body">
+                        </tbody>
+                    </table>
+                    <div class="results-buttons">
+                        <button id="btn-restart-race" class="menu-btn">Znovu</button>
+                        <button id="btn-back-menu" class="menu-btn">Menu</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pause Menu -->
+            <div id="pause-menu" class="hidden">
+                <div class="pause-content">
+                    <h2>PAUZA</h2>
+                    <button id="btn-resume" class="menu-btn">Pokračovat</button>
+                    <button id="btn-restart" class="menu-btn">Restart</button>
+                    <button id="btn-quit" class="menu-btn">Opustit závod</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="hidden">
+            <div class="loading-content">
+                <h2>Načítání...</h2>
+                <div class="loading-bar">
+                    <div id="loading-progress" class="loading-fill"></div>
+                </div>
+                <p id="loading-text">Připravuji trať...</p>
+            </div>
         </div>
     </div>
 
     <script src="js/utils.js"></script>
     <script src="js/audio.js"></script>
-    <script src="js/weapons.js"></script>
-    <script src="js/map.js"></script>
-    <script src="js/player.js"></script>
-    <script src="js/bot.js"></script>
-    <script src="js/raycaster.js"></script>
+    <script src="js/physics.js"></script>
+    <script src="js/cars.js"></script>
+    <script src="js/tracks.js"></script>
+    <script src="js/powerups.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/renderer.js"></script>
     <script src="js/game.js"></script>
     <script src="js/main.js"></script>
 </body>
