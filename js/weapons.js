@@ -217,7 +217,8 @@ class Weapon {
 
     generateRecoilPattern() {
         const pattern = [];
-        const length = this.clipSize || 30;
+        // IMPORTANT: clipSize can be Infinity (for knife), must check with Number.isFinite
+        const length = Number.isFinite(this.clipSize) ? this.clipSize : 30;
 
         for (let i = 0; i < length; i++) {
             // Vertical recoil increases with shots
