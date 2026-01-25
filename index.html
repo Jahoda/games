@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counter-Strike 1.5 Clone</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Main Menu -->
+        <div id="main-menu" class="menu">
+            <h1>COUNTER-STRIKE</h1>
+            <h2>v1.5 Clone</h2>
+            <div class="menu-buttons">
+                <button id="btn-new-game">NOVÁ HRA</button>
+                <button id="btn-controls">OVLÁDÁNÍ</button>
+                <button id="btn-options">NASTAVENÍ</button>
+            </div>
+        </div>
+
+        <!-- Team Selection -->
+        <div id="team-select" class="menu hidden">
+            <h2>VYBER TÝM</h2>
+            <div class="team-buttons">
+                <button id="btn-ct" class="team-btn ct">
+                    <span class="team-name">COUNTER-TERRORISTS</span>
+                    <span class="team-desc">Speciální jednotky</span>
+                </button>
+                <button id="btn-t" class="team-btn t">
+                    <span class="team-name">TERRORISTS</span>
+                    <span class="team-desc">Teroristé</span>
+                </button>
+            </div>
+            <button id="btn-back-main" class="back-btn">ZPĚT</button>
+        </div>
+
+        <!-- Controls Info -->
+        <div id="controls-menu" class="menu hidden">
+            <h2>OVLÁDÁNÍ</h2>
+            <div class="controls-list">
+                <div class="control-item"><span>W, A, S, D</span> - Pohyb</div>
+                <div class="control-item"><span>MYŠ</span> - Rozhlížení</div>
+                <div class="control-item"><span>LEVÉ TLAČÍTKO</span> - Střelba</div>
+                <div class="control-item"><span>R</span> - Přebití</div>
+                <div class="control-item"><span>B</span> - Nákup zbraní</div>
+                <div class="control-item"><span>1, 2, 3, 4</span> - Výběr zbraně</div>
+                <div class="control-item"><span>SHIFT</span> - Chůze (tichý pohyb)</div>
+                <div class="control-item"><span>CTRL</span> - Dřep</div>
+                <div class="control-item"><span>SPACE</span> - Skok</div>
+                <div class="control-item"><span>TAB</span> - Skóre</div>
+                <div class="control-item"><span>ESC</span> - Menu</div>
+            </div>
+            <button id="btn-back-controls" class="back-btn">ZPĚT</button>
+        </div>
+
+        <!-- Buy Menu -->
+        <div id="buy-menu" class="menu hidden">
+            <h2>NÁKUP ZBRANÍ</h2>
+            <div class="buy-categories">
+                <div class="buy-category">
+                    <h3>PISTOLE</h3>
+                    <button class="buy-item" data-weapon="glock" data-price="400">Glock 18 - $400</button>
+                    <button class="buy-item" data-weapon="usp" data-price="500">USP - $500</button>
+                    <button class="buy-item" data-weapon="deagle" data-price="650">Desert Eagle - $650</button>
+                </div>
+                <div class="buy-category">
+                    <h3>PUŠKY</h3>
+                    <button class="buy-item" data-weapon="ak47" data-price="2500">AK-47 - $2500</button>
+                    <button class="buy-item" data-weapon="m4a1" data-price="3100">M4A1 - $3100</button>
+                    <button class="buy-item" data-weapon="awp" data-price="4750">AWP - $4750</button>
+                    <button class="buy-item" data-weapon="mp5" data-price="1500">MP5 - $1500</button>
+                </div>
+                <div class="buy-category">
+                    <h3>VYBAVENÍ</h3>
+                    <button class="buy-item" data-weapon="kevlar" data-price="650">Kevlar - $650</button>
+                    <button class="buy-item" data-weapon="helmet" data-price="1000">Kevlar + Helma - $1000</button>
+                    <button class="buy-item" data-weapon="defuse" data-price="200">Defuse Kit - $200</button>
+                </div>
+            </div>
+            <div class="buy-footer">
+                <span id="player-money">$800</span>
+                <button id="btn-close-buy">ZAVŘÍT [B]</button>
+            </div>
+        </div>
+
+        <!-- Scoreboard -->
+        <div id="scoreboard" class="hidden">
+            <h2>SKÓRE</h2>
+            <div class="score-teams">
+                <div class="score-team ct">
+                    <h3>Counter-Terrorists</h3>
+                    <div id="ct-score">0</div>
+                </div>
+                <div class="score-team t">
+                    <h3>Terrorists</h3>
+                    <div id="t-score">0</div>
+                </div>
+            </div>
+            <div id="player-list"></div>
+        </div>
+
+        <!-- Game Canvas -->
+        <canvas id="game-canvas"></canvas>
+
+        <!-- HUD -->
+        <div id="hud" class="hidden">
+            <div id="hud-top">
+                <div id="round-timer">1:45</div>
+                <div id="round-info">
+                    <span id="ct-rounds">0</span> - <span id="t-rounds">0</span>
+                </div>
+            </div>
+            <div id="radar">
+                <canvas id="radar-canvas"></canvas>
+            </div>
+            <div id="hud-bottom">
+                <div id="health-armor">
+                    <div class="hud-item">
+                        <span class="hud-icon">+</span>
+                        <span id="health">100</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-icon">◈</span>
+                        <span id="armor">0</span>
+                    </div>
+                </div>
+                <div id="ammo">
+                    <span id="ammo-clip">30</span> / <span id="ammo-reserve">90</span>
+                </div>
+                <div id="money">$800</div>
+            </div>
+            <div id="crosshair"></div>
+            <div id="hit-marker" class="hidden"></div>
+            <div id="damage-overlay" class="hidden"></div>
+            <div id="kill-feed"></div>
+        </div>
+
+        <!-- Death Screen -->
+        <div id="death-screen" class="hidden">
+            <h2>ZABIT</h2>
+            <p>Zabil tě: <span id="killer-name">Enemy</span></p>
+            <p>Zbraň: <span id="killer-weapon">AK-47</span></p>
+            <p>Respawn za: <span id="respawn-timer">5</span>s</p>
+        </div>
+
+        <!-- Round End -->
+        <div id="round-end" class="hidden">
+            <h2 id="round-winner"></h2>
+            <p id="round-reason"></p>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/weapons.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/bot.js"></script>
+    <script src="js/raycaster.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

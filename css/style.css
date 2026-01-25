@@ -1,0 +1,567 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    cursor: none;
+}
+
+#game-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+#game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+}
+
+/* Menus */
+.menu {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.menu h1 {
+    font-size: 72px;
+    color: #ff6600;
+    text-shadow: 4px 4px 0 #000, 0 0 20px #ff6600;
+    margin-bottom: 10px;
+    letter-spacing: 8px;
+}
+
+.menu h2 {
+    font-size: 24px;
+    color: #888;
+    margin-bottom: 50px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.menu-buttons, .team-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.menu button {
+    padding: 15px 50px;
+    font-size: 18px;
+    font-family: 'Courier New', monospace;
+    background: linear-gradient(180deg, #444 0%, #222 100%);
+    color: #fff;
+    border: 2px solid #666;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.menu button:hover {
+    background: linear-gradient(180deg, #ff6600 0%, #cc5500 100%);
+    border-color: #ff8800;
+    transform: scale(1.05);
+}
+
+.team-buttons {
+    flex-direction: row;
+    gap: 30px;
+}
+
+.team-btn {
+    width: 250px;
+    height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.team-btn.ct {
+    background: linear-gradient(180deg, #1a4a7a 0%, #0d2840 100%);
+    border-color: #3388cc;
+}
+
+.team-btn.ct:hover {
+    background: linear-gradient(180deg, #2266aa 0%, #1a4a7a 100%);
+    border-color: #44aaff;
+}
+
+.team-btn.t {
+    background: linear-gradient(180deg, #7a4a1a 0%, #402810 100%);
+    border-color: #cc8833;
+}
+
+.team-btn.t:hover {
+    background: linear-gradient(180deg, #aa6622 0%, #7a4a1a 100%);
+    border-color: #ffaa44;
+}
+
+.team-name {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.team-desc {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.back-btn {
+    margin-top: 30px;
+}
+
+/* Controls Menu */
+.controls-list {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 30px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.control-item {
+    font-size: 16px;
+    color: #fff;
+    margin: 10px 0;
+}
+
+.control-item span {
+    color: #ff6600;
+    font-weight: bold;
+    display: inline-block;
+    width: 150px;
+}
+
+/* Buy Menu */
+#buy-menu {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.buy-categories {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.buy-category {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 5px;
+    min-width: 200px;
+}
+
+.buy-category h3 {
+    color: #ff6600;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.buy-item {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    font-size: 12px;
+    background: rgba(50, 50, 50, 0.8);
+    border: 1px solid #444;
+}
+
+.buy-item:hover {
+    background: rgba(100, 100, 100, 0.8);
+    border-color: #ff6600;
+}
+
+.buy-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.buy-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 680px;
+    padding: 0 20px;
+}
+
+#player-money {
+    font-size: 24px;
+    color: #00ff00;
+}
+
+/* Scoreboard */
+#scoreboard {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    padding: 30px;
+    border-radius: 10px;
+    z-index: 90;
+    min-width: 500px;
+}
+
+#scoreboard h2 {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+.score-teams {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+.score-team {
+    text-align: center;
+    padding: 20px;
+}
+
+.score-team.ct {
+    color: #44aaff;
+}
+
+.score-team.t {
+    color: #ffaa44;
+}
+
+.score-team h3 {
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.score-team div {
+    font-size: 48px;
+    font-weight: bold;
+}
+
+/* HUD */
+#hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#hud-top {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#round-timer {
+    font-size: 32px;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000;
+}
+
+#round-info {
+    font-size: 24px;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000;
+}
+
+#ct-rounds {
+    color: #44aaff;
+}
+
+#t-rounds {
+    color: #ffaa44;
+}
+
+/* Radar */
+#radar {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 150px;
+    height: 150px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid #444;
+    border-radius: 5px;
+}
+
+#radar-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+/* Bottom HUD */
+#hud-bottom {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0 30px;
+}
+
+#health-armor {
+    display: flex;
+    gap: 20px;
+}
+
+.hud-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 24px;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000;
+}
+
+.hud-icon {
+    font-size: 28px;
+}
+
+#health-armor .hud-item:first-child .hud-icon {
+    color: #ff4444;
+}
+
+#health-armor .hud-item:last-child .hud-icon {
+    color: #4488ff;
+}
+
+#ammo {
+    font-size: 32px;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000;
+}
+
+#ammo-clip {
+    color: #ffcc00;
+}
+
+#money {
+    font-size: 24px;
+    color: #00ff00;
+    text-shadow: 2px 2px 0 #000;
+}
+
+/* Crosshair */
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
+#crosshair::before,
+#crosshair::after {
+    content: '';
+    position: absolute;
+    background: #00ff00;
+    box-shadow: 0 0 2px #000;
+}
+
+#crosshair::before {
+    width: 2px;
+    height: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#crosshair::after {
+    width: 20px;
+    height: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Hit marker */
+#hit-marker {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    pointer-events: none;
+}
+
+#hit-marker::before,
+#hit-marker::after {
+    content: '';
+    position: absolute;
+    background: #ff0000;
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+
+#hit-marker.show::before,
+#hit-marker.show::after {
+    opacity: 1;
+}
+
+#hit-marker::before {
+    width: 3px;
+    height: 30px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+#hit-marker::after {
+    width: 30px;
+    height: 3px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+}
+
+/* Damage overlay */
+#damage-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, transparent 30%, rgba(255, 0, 0, 0.5) 100%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+#damage-overlay.show {
+    opacity: 1;
+}
+
+/* Kill feed */
+#kill-feed {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.kill-entry {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 5px 15px;
+    font-size: 14px;
+    color: #fff;
+    border-radius: 3px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.kill-entry .killer {
+    color: #ffaa44;
+}
+
+.kill-entry .killer.ct {
+    color: #44aaff;
+}
+
+.kill-entry .victim {
+    color: #ff4444;
+}
+
+.kill-entry .weapon {
+    color: #888;
+    font-size: 12px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Death screen */
+#death-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(139, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 80;
+}
+
+#death-screen h2 {
+    font-size: 72px;
+    color: #fff;
+    text-shadow: 4px 4px 0 #000;
+}
+
+#death-screen p {
+    font-size: 24px;
+    color: #fff;
+    margin-top: 20px;
+}
+
+/* Round end */
+#round-end {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 85;
+}
+
+#round-end h2 {
+    font-size: 48px;
+    text-shadow: 4px 4px 0 #000;
+}
+
+#round-end h2.ct-win {
+    color: #44aaff;
+}
+
+#round-end h2.t-win {
+    color: #ffaa44;
+}
+
+#round-end p {
+    font-size: 24px;
+    color: #fff;
+    margin-top: 10px;
+}
+
+/* Weapon display */
+#weapon-display {
+    position: absolute;
+    bottom: 100px;
+    right: 30px;
+}
+
+.weapon-sprite {
+    image-rendering: pixelated;
+}
