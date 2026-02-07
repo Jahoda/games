@@ -55,7 +55,7 @@ canvas{display:block}
 <div id="menu">
 <h1>PRAGUE</h1>
 <h2>CRIME CITY</h2>
-<p class="ver">v2.5 - Connected City</p>
+<p class="ver">v2.6 - Bridge & Traffic Update</p>
 <button class="menu-btn" onclick="startGame()">HRÁT</button>
 <button class="menu-btn" onclick="showControls()">OVLÁDÁNÍ</button>
 </div>
@@ -414,6 +414,18 @@ function onRoadOrIntersection(x,y,margin){
     return false;
 }
 
+// --- BRIDGE ROADS (connect both banks) ---
+let bridgeRoadsAdded=false;
+function addBridgeRoads(){
+    if(bridgeRoadsAdded)return;
+    bridgeRoadsAdded=true;
+    for(let b of bridges){
+        let rx=getRiverX(b.y);
+        let hw=RW/2+60;
+        roads.push({pts:[{x:rx-hw,y:b.y},{x:rx,y:b.y},{x:rx+hw,y:b.y}],w:b.w,name:b.name,isBridge:true});
+    }
+}
+
 // --- BUILDINGS ---
 let buildings=[];
 function genBuildings(){
@@ -532,8 +544,9 @@ function spawnVehicles(){
                 let ti=Math.floor(Math.random()*9);// exclude police+special
                 if(Math.random()<.06)ti=8;// taxi
                 if(r.name.includes("Tramvaj")||Math.random()<.02)ti=6;// tram
+                let fwd=side<0?-1:1;
                 vehicles.push({x,y,angle:ang+(side<0?Math.PI:0),speed:120*(0.5+Math.random()*0.6),
-                    vx:0,vy:0,type:vTypes[ti],roadIdx:roads.indexOf(r),segIdx:i,ai:true,occupied:false,
+                    vx:0,vy:0,type:vTypes[ti],roadIdx:roads.indexOf(r),segIdx:i,ai:true,occupied:false,fwd,
                     colorVar:Math.random()>.5?null:['#993333','#336699','#669933','#996633','#333366','#663366','#339966','#996600','#444','#777','#aaa'][Math.floor(Math.random()*11)]
                 });
             }
@@ -703,7 +716,7 @@ function resolveCol(e){
         }
     }
     if(inRiver(e.x,e.y)){
-        let onB=false;for(let br of bridges)if(Math.abs(e.y-br.y)<28)onB=true;
+        let onB=false;for(let br of bridges)if(Math.abs(e.y-br.y)<br.w/2+8)onB=true;
         if(!onB){let rx=getRiverX(e.y);e.x=e.x<rx?rx-RW/2-hw:rx+RW/2+hw;e.speed*=.1;
             if(e===player.vehicle)showMsg("Pozor - Vltava!")}
     }
@@ -768,67 +781,91 @@ function update(dt){
         if(Math.abs(touch.steerY)>0.1)my=touch.steerY;
         if(touch.gas)my=-1;if(touch.brake)my=1;
         if(mx||my){let a=Math.atan2(my,mx);player.x+=Math.cos(a)*player.footSpeed*dt;player.y+=Math.sin(a)*player.footSpeed*dt;player.angle=a}
-        if(inRiver(player.x,player.y)){let onB=false;for(let b of bridges)if(Math.abs(player.y-b.y)<28)onB=true;
+        if(inRiver(player.x,player.y)){let onB=false;for(let b of bridges)if(Math.abs(player.y-b.y)<b.w/2+8)onB=true;
             if(!onB){let rx=getRiverX(player.y);player.x=player.x<rx?rx-RW/2-10:rx+RW/2+10}}
         player.x=Math.max(10,Math.min(WW-10,player.x));player.y=Math.max(10,Math.min(WH-10,player.y));
     }
 
-    // --- AI Traffic (intersection-aware) ---
+    // --- AI Traffic (intersection-aware, no teleporting) ---
     for(let v of vehicles){
         if(!v.ai||v.occupied)continue;
+        if(v.fwd===undefined)v.fwd=1; // 1=forward along pts, -1=backward
         if(v.roadIdx>=0){
             let r=roads[v.roadIdx];
-            if(r&&v.segIdx<r.pts.length-1){
-                let tgt=r.pts[v.segIdx+1];
-                let dx=tgt.x-v.x,dy=tgt.y-v.y,d=Math.hypot(dx,dy);
-                if(d<35){
-                    v.segIdx++;
-                    if(v.segIdx>=r.pts.length-1){
-                        // Try switching to a connecting road at intersection
-                        let switched=false;
-                        let endPt=r.pts[r.pts.length-1];
-                        for(let ix of intersections){
-                            if(Math.hypot(ix.x-endPt.x,ix.y-endPt.y)<40){
-                                let cands=ix.roads.filter(ri=>ri!==v.roadIdx);
-                                if(cands.length>0){
-                                    let newRi=cands[Math.floor(Math.random()*cands.length)];
-                                    let nr=roads[newRi];
-                                    let dS=Math.hypot(nr.pts[0].x-ix.x,nr.pts[0].y-ix.y);
-                                    let dE=Math.hypot(nr.pts[nr.pts.length-1].x-ix.x,nr.pts[nr.pts.length-1].y-ix.y);
-                                    v.roadIdx=newRi;
-                                    if(dS<dE){v.segIdx=0;v.x=nr.pts[0].x;v.y=nr.pts[0].y}
-                                    else{v.segIdx=nr.pts.length-2;v.x=nr.pts[nr.pts.length-1].x;v.y=nr.pts[nr.pts.length-1].y;v.reverse=true}
-                                    switched=true;break;
-                                }
-                            }
-                        }
-                        // Also try switching at any mid-road intersection
-                        if(!switched){
+            if(r){
+                let nextPi=v.segIdx+(v.fwd>0?1:0);
+                let prevPi=v.segIdx+(v.fwd>0?0:-1);
+                if(nextPi>=0&&nextPi<r.pts.length){
+                    let tgt=r.pts[nextPi];
+                    let dx=tgt.x-v.x,dy=tgt.y-v.y,d=Math.hypot(dx,dy);
+                    if(d<35){
+                        // Reached waypoint - advance
+                        if(v.fwd>0){v.segIdx++;} else{v.segIdx--;}
+                        let atEnd=v.fwd>0?v.segIdx>=r.pts.length-1:v.segIdx<=0;
+                        if(atEnd){
+                            // Try switching road at intersection
+                            let switched=false;
+                            let endPt=r.pts[v.fwd>0?r.pts.length-1:0];
                             for(let ix of intersections){
-                                if(Math.hypot(ix.x-v.x,ix.y-v.y)<60&&Math.random()<0.4){
+                                if(Math.hypot(ix.x-endPt.x,ix.y-endPt.y)<50){
                                     let cands=ix.roads.filter(ri=>ri!==v.roadIdx);
                                     if(cands.length>0){
                                         let newRi=cands[Math.floor(Math.random()*cands.length)];
                                         let nr=roads[newRi];
-                                        v.roadIdx=newRi;v.segIdx=0;
-                                        v.x=nr.pts[0].x;v.y=nr.pts[0].y;
+                                        // Find closest point on new road to intersection
+                                        let bestPi=0,bestD=Infinity;
+                                        for(let pi=0;pi<nr.pts.length;pi++){
+                                            let dd=Math.hypot(nr.pts[pi].x-ix.x,nr.pts[pi].y-ix.y);
+                                            if(dd<bestD){bestD=dd;bestPi=pi}
+                                        }
+                                        v.roadIdx=newRi;v.segIdx=bestPi;
+                                        // Go away from intersection
+                                        v.fwd=bestPi<nr.pts.length-1?1:-1;
                                         switched=true;break;
                                     }
                                 }
                             }
+                            // No intersection found: just reverse direction
+                            if(!switched){v.fwd=-v.fwd}
                         }
-                        if(!switched){v.segIdx=0;v.x=r.pts[0].x;v.y=r.pts[0].y}
                     }
+                    let ta=Math.atan2(dy,dx),ad=ta-v.angle;
+                    while(ad>Math.PI)ad-=6.28;while(ad<-Math.PI)ad+=6.28;
+                    v.angle+=ad*2.5*dt;
+                    v.speed+=(120-v.speed)*dt;
+                }else{
+                    // Safety: fix out of bounds
+                    v.segIdx=Math.max(0,Math.min(r.pts.length-2,v.segIdx));
+                    v.fwd=-v.fwd;
                 }
-                let ta=Math.atan2(dy,dx),ad=ta-v.angle;
-                while(ad>Math.PI)ad-=6.28;while(ad<-Math.PI)ad+=6.28;
-                v.angle+=ad*2.2*dt;
-                v.speed+=(120-v.speed)*dt;
             }
         }
         v.vx=Math.cos(v.angle)*v.speed;v.vy=Math.sin(v.angle)*v.speed;
         v.x+=v.vx*dt;v.y+=v.vy*dt;
         v.x=Math.max(20,Math.min(WW-20,v.x));v.y=Math.max(20,Math.min(WH-20,v.y));
+    }
+
+    // --- Vehicle-to-vehicle collision ---
+    let allVeh=[...vehicles,...police];
+    for(let i=0;i<allVeh.length;i++){
+        let a=allVeh[i];
+        if(Math.abs(a.x-player.x)>900||Math.abs(a.y-player.y)>700)continue;
+        let ra=(Math.max(a.type.w,a.type.h))*0.4;
+        for(let j=i+1;j<allVeh.length;j++){
+            let b=allVeh[j];
+            let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
+            let rb=(Math.max(b.type.w,b.type.h))*0.4;
+            let minD=ra+rb;
+            if(d<minD&&d>0.1){
+                let overlap=minD-d;
+                let nx=dx/d,ny=dy/d;
+                let pushA=b.occupied&&b===player.vehicle?0.1:0.5;
+                let pushB=a.occupied&&a===player.vehicle?0.1:0.5;
+                a.x-=nx*overlap*pushA;a.y-=ny*overlap*pushA;
+                b.x+=nx*overlap*pushB;b.y+=ny*overlap*pushB;
+                a.speed*=0.7;b.speed*=0.7;
+            }
+        }
     }
 
     // --- Pedestrians ---
@@ -1389,7 +1426,7 @@ function startGame(){
     document.getElementById('menu').style.display='none';
     document.getElementById('hud').style.display='block';
     if(!running){
-        running=true;buildIntersections();genBuildings();spawnVehicles();spawnPeds();spawnPolice();
+        running=true;addBridgeRoads();buildIntersections();genBuildings();spawnVehicles();spawnPeds();spawnPolice();
         score=1000;player.wanted=0;gameTime=0;dayPhase=1;
         showMsg("Vítej v Praze! F=nastoupit/vystoupit, E=ukrást auto");
     }else running=true;
