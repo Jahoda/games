@@ -1,164 +1,1470 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Counter-Strike 1.5 Clone</title>
-    <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Prague Crime City 2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Courier New',monospace;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block}
+#menu{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,#0a0520 0%,#0d0d0d 40%,#1a0800 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100}
+#menu h1{font-size:min(72px,12vw);color:#ff6600;text-shadow:0 0 30px #ff3300,0 0 60px #ff0000,0 4px 0 #882200;letter-spacing:8px;margin-bottom:0}
+#menu h2{font-size:min(28px,5vw);color:#ffcc00;text-shadow:0 0 15px #ff9900;margin-bottom:10px;letter-spacing:4px}
+#menu .ver{font-size:12px;color:#666;margin-bottom:30px}
+.menu-btn{display:block;width:min(300px,80vw);padding:15px;margin:8px;background:linear-gradient(180deg,#333 0%,#1a1a1a 100%);border:2px solid #ff6600;color:#ff6600;font-family:'Courier New',monospace;font-size:min(20px,4.5vw);cursor:pointer;letter-spacing:3px;transition:all .2s;border-radius:4px}
+.menu-btn:hover,.menu-btn:active{background:#ff6600;color:#000;box-shadow:0 0 30px #ff6600}
+#controls-info{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.97);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:101;color:#ff6600;overflow-y:auto;padding:20px}
+#controls-info h2{font-size:min(36px,7vw);margin-bottom:20px}
+.ctrl{font-size:min(14px,3.5vw);margin:4px 0;color:#ccc}
+.ctrl span{color:#ffcc00;display:inline-block;width:min(120px,30vw);text-align:right;margin-right:10px}
+#hud{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none}
+#speed-display{position:absolute;bottom:20px;right:20px;color:#0f0;font-size:min(28px,5vw);text-shadow:0 0 8px #0f0;font-weight:bold}
+#wanted-display{position:absolute;top:15px;right:15px;font-size:min(32px,6vw);color:#444;letter-spacing:2px}
+#wanted-display .active{color:#ff0000;text-shadow:0 0 12px #ff0000,0 0 25px #ff4400}
+#location-display{position:absolute;bottom:15px;left:15px;color:#fff;font-size:min(13px,3vw);text-shadow:0 0 6px #000;background:rgba(0,0,0,.6);padding:5px 12px;border-radius:3px;border-left:3px solid #ff6600}
+#message-display{position:absolute;top:55px;left:50%;transform:translateX(-50%);color:#ffcc00;font-size:min(18px,4vw);text-shadow:0 0 12px #000,0 0 24px #000;text-align:center;opacity:0;transition:opacity .3s;white-space:nowrap}
+#minimap-container{position:absolute;top:12px;left:12px;width:min(160px,25vw);height:min(160px,25vw);border:2px solid rgba(255,255,255,.3);background:rgba(0,0,0,.7);border-radius:50%;overflow:hidden}
+#minimap{width:100%;height:100%}
+#vehicle-info{position:absolute;bottom:55px;right:20px;color:#aaa;font-size:min(11px,2.8vw);text-shadow:0 0 4px #000}
+#stats-display{position:absolute;top:15px;left:50%;transform:translateX(-50%);color:#0f0;font-size:min(16px,3.5vw);text-shadow:0 0 6px #000;background:rgba(0,0,0,.5);padding:4px 14px;border-radius:3px}
+/* Mobile controls */
+#mobile-controls{display:none;position:fixed;bottom:0;left:0;width:100%;height:45%;z-index:20;pointer-events:none}
+.touch-btn{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:bold;pointer-events:auto;opacity:.45;transition:opacity .1s;border:2px solid rgba(255,255,255,.3)}
+.touch-btn:active,.touch-btn.pressed{opacity:.8}
+#btn-gas{bottom:60px;right:90px;width:70px;height:70px;background:rgba(0,200,0,.4);color:#0f0}
+#btn-brake{bottom:60px;right:10px;width:70px;height:70px;background:rgba(200,0,0,.4);color:#f44}
+#btn-handbrake{bottom:140px;right:50px;width:56px;height:56px;background:rgba(200,200,0,.4);color:#ff0;font-size:14px}
+#btn-action{bottom:210px;right:55px;width:52px;height:52px;background:rgba(0,150,255,.4);color:#4af;font-size:16px}
+#btn-steal{bottom:210px;right:10px;width:52px;height:52px;background:rgba(255,100,0,.4);color:#f80;font-size:16px}
+#joystick-zone{position:absolute;bottom:20px;left:20px;width:180px;height:180px;pointer-events:auto}
+#joystick-base{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2)}
+#joystick-knob{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.4)}
+@media(max-width:900px),(pointer:coarse){
+#mobile-controls{display:block}
+#minimap-container{width:100px;height:100px;top:8px;left:8px}
+#speed-display{bottom:auto;top:15px;right:auto;left:50%;transform:translateX(-50%);font-size:16px}
+#wanted-display{top:8px;right:8px;font-size:22px}
+#location-display{bottom:auto;top:40px;left:50%;transform:translateX(-50%);font-size:11px}
+#vehicle-info{display:none}
+#stats-display{top:8px;font-size:12px}
+}
+</style>
 </head>
 <body>
-    <div id="game-container">
-        <!-- Main Menu -->
-        <div id="main-menu" class="menu">
-            <h1>COUNTER-STRIKE</h1>
-            <h2>v1.5 Clone</h2>
-            <div class="menu-buttons">
-                <button id="btn-new-game">NOVÁ HRA</button>
-                <button id="btn-controls">OVLÁDÁNÍ</button>
-                <button id="btn-options">NASTAVENÍ</button>
-            </div>
-        </div>
+<div id="menu">
+<h1>PRAGUE</h1>
+<h2>CRIME CITY</h2>
+<p class="ver">v2.7 - Smooth Traffic</p>
+<button class="menu-btn" onclick="startGame()">HRÁT</button>
+<button class="menu-btn" onclick="showControls()">OVLÁDÁNÍ</button>
+</div>
+<div id="controls-info">
+<h2>OVLÁDÁNÍ</h2>
+<div class="ctrl"><span>W / ↑</span> Plyn</div>
+<div class="ctrl"><span>S / ↓</span> Brzda / Couvání</div>
+<div class="ctrl"><span>A / ←</span> Zatočit vlevo</div>
+<div class="ctrl"><span>D / →</span> Zatočit vpravo</div>
+<div class="ctrl"><span>SPACE</span> Ruční brzda / Drift</div>
+<div class="ctrl"><span>F</span> Nastoupit / Vystoupit</div>
+<div class="ctrl"><span>E</span> Ukrást auto</div>
+<div class="ctrl"><span>ESC</span> Menu</div>
+<br>
+<div class="ctrl" style="color:#888">Na mobilu: joystick + tlačítka</div>
+<br>
+<button class="menu-btn" onclick="hideControls()">ZPĚT</button>
+</div>
+<canvas id="game"></canvas>
+<div id="hud">
+<div id="minimap-container"><canvas id="minimap"></canvas></div>
+<div id="wanted-display">★★★★★</div>
+<div id="speed-display">0 km/h</div>
+<div id="location-display">Praha</div>
+<div id="message-display"></div>
+<div id="vehicle-info"></div>
+<div id="stats-display"></div>
+</div>
+<div id="mobile-controls">
+<div id="joystick-zone">
+<div id="joystick-base"><div id="joystick-knob"></div></div>
+</div>
+<div id="btn-gas" class="touch-btn">▲</div>
+<div id="btn-brake" class="touch-btn">▼</div>
+<div id="btn-handbrake" class="touch-btn">HB</div>
+<div id="btn-action" class="touch-btn">F</div>
+<div id="btn-steal" class="touch-btn">E</div>
+</div>
+<script>
+// ============================================================
+// PRAGUE CRIME CITY 2.0 - Realistic Edition
+// ============================================================
+const C=document.getElementById('game'),X=C.getContext('2d');
+const MC=document.getElementById('minimap'),MX=MC.getContext('2d');
 
-        <!-- Team Selection -->
-        <div id="team-select" class="menu hidden">
-            <h2>VYBER TÝM</h2>
-            <div class="team-buttons">
-                <button id="btn-ct" class="team-btn ct">
-                    <span class="team-name">COUNTER-TERRORISTS</span>
-                    <span class="team-desc">Speciální jednotky</span>
-                </button>
-                <button id="btn-t" class="team-btn t">
-                    <span class="team-name">TERRORISTS</span>
-                    <span class="team-desc">Teroristé</span>
-                </button>
-            </div>
-            <button id="btn-back-main" class="back-btn">ZPĚT</button>
-        </div>
+// --- WORLD ---
+const WW=9000, WH=7000;
 
-        <!-- Controls Info -->
-        <div id="controls-menu" class="menu hidden">
-            <h2>OVLÁDÁNÍ</h2>
-            <div class="controls-list">
-                <div class="control-item"><span>W, A, S, D</span> - Pohyb</div>
-                <div class="control-item"><span>MYŠ</span> - Rozhlížení</div>
-                <div class="control-item"><span>LEVÉ TLAČÍTKO</span> - Střelba</div>
-                <div class="control-item"><span>R</span> - Přebití</div>
-                <div class="control-item"><span>B</span> - Nákup zbraní</div>
-                <div class="control-item"><span>1, 2, 3, 4</span> - Výběr zbraně</div>
-                <div class="control-item"><span>SHIFT</span> - Chůze (tichý pohyb)</div>
-                <div class="control-item"><span>CTRL</span> - Dřep</div>
-                <div class="control-item"><span>SPACE</span> - Skok</div>
-                <div class="control-item"><span>TAB</span> - Skóre</div>
-                <div class="control-item"><span>ESC</span> - Menu</div>
-            </div>
-            <button id="btn-back-controls" class="back-btn">ZPĚT</button>
-        </div>
+// --- PHYSICS ---
+const FRICTION=0.988, HBRAKE_FRIC=0.955, BRAKE_F=450;
 
-        <!-- Buy Menu -->
-        <div id="buy-menu" class="menu hidden">
-            <h2>NÁKUP ZBRANÍ</h2>
-            <div class="buy-categories">
-                <div class="buy-category">
-                    <h3>PISTOLE</h3>
-                    <button class="buy-item" data-weapon="glock" data-price="400">Glock 18 - $400</button>
-                    <button class="buy-item" data-weapon="usp" data-price="500">USP - $500</button>
-                    <button class="buy-item" data-weapon="deagle" data-price="650">Desert Eagle - $650</button>
-                </div>
-                <div class="buy-category">
-                    <h3>PUŠKY</h3>
-                    <button class="buy-item" data-weapon="ak47" data-price="2500">AK-47 - $2500</button>
-                    <button class="buy-item" data-weapon="m4a1" data-price="3100">M4A1 - $3100</button>
-                    <button class="buy-item" data-weapon="awp" data-price="4750">AWP - $4750</button>
-                    <button class="buy-item" data-weapon="mp5" data-price="1500">MP5 - $1500</button>
-                </div>
-                <div class="buy-category">
-                    <h3>VYBAVENÍ</h3>
-                    <button class="buy-item" data-weapon="kevlar" data-price="650">Kevlar - $650</button>
-                    <button class="buy-item" data-weapon="helmet" data-price="1000">Kevlar + Helma - $1000</button>
-                    <button class="buy-item" data-weapon="defuse" data-price="200">Defuse Kit - $200</button>
-                </div>
-            </div>
-            <div class="buy-footer">
-                <span id="player-money">$800</span>
-                <button id="btn-close-buy">ZAVŘÍT [B]</button>
-            </div>
-        </div>
+// --- STATE ---
+let running=false, keys={}, dt=0, lt=0, cam={x:0,y:0,zoom:1};
+let score=0, msgTimer=0, gameTime=0, dayPhase=0;
 
-        <!-- Scoreboard -->
-        <div id="scoreboard" class="hidden">
-            <h2>SKÓRE</h2>
-            <div class="score-teams">
-                <div class="score-team ct">
-                    <h3>Counter-Terrorists</h3>
-                    <div id="ct-score">0</div>
-                </div>
-                <div class="score-team t">
-                    <h3>Terrorists</h3>
-                    <div id="t-score">0</div>
-                </div>
-            </div>
-            <div id="player-list"></div>
-        </div>
+// --- MOBILE INPUT ---
+let touch={steerX:0,steerY:0,gas:false,brake:false,hbrake:false};
+let joystickActive=false, joystickId=null;
 
-        <!-- Game Canvas -->
-        <canvas id="game-canvas"></canvas>
+function resize(){
+    C.width=innerWidth; C.height=innerHeight;
+    let ms=MC.parentElement;
+    MC.width=ms.clientWidth; MC.height=ms.clientHeight;
+}
+addEventListener('resize',resize); resize();
 
-        <!-- HUD -->
-        <div id="hud" class="hidden">
-            <div id="hud-top">
-                <div id="round-timer">1:45</div>
-                <div id="round-info">
-                    <span id="ct-rounds">0</span> - <span id="t-rounds">0</span>
-                </div>
-            </div>
-            <div id="radar">
-                <canvas id="radar-canvas"></canvas>
-            </div>
-            <div id="hud-bottom">
-                <div id="health-armor">
-                    <div class="hud-item">
-                        <span class="hud-icon">+</span>
-                        <span id="health">100</span>
-                    </div>
-                    <div class="hud-item">
-                        <span class="hud-icon">◈</span>
-                        <span id="armor">0</span>
-                    </div>
-                </div>
-                <div id="ammo">
-                    <span id="ammo-clip">30</span> / <span id="ammo-reserve">90</span>
-                </div>
-                <div id="money">$800</div>
-            </div>
-            <div id="crosshair"></div>
-            <div id="hit-marker" class="hidden"></div>
-            <div id="damage-overlay" class="hidden"></div>
-            <div id="kill-feed"></div>
-        </div>
+// ============================================================
+// PRAGUE MAP - Based on real geography
+// ============================================================
 
-        <!-- Death Screen -->
-        <div id="death-screen" class="hidden">
-            <h2>ZABIT</h2>
-            <p>Zabil tě: <span id="killer-name">Enemy</span></p>
-            <p>Zbraň: <span id="killer-weapon">AK-47</span></p>
-            <p>Respawn za: <span id="respawn-timer">5</span>s</p>
-        </div>
+// Vltava - realistic S-curve through Prague (more points for accuracy)
+const riverPath=[
+    {x:3500,y:0},{x:3460,y:200},{x:3420,y:500},{x:3380,y:800},
+    {x:3350,y:1100},{x:3320,y:1400},{x:3300,y:1700},{x:3290,y:1900},
+    {x:3285,y:2100},{x:3290,y:2300},{x:3300,y:2500},{x:3310,y:2700},
+    {x:3330,y:2900},{x:3350,y:3100},{x:3380,y:3300},{x:3400,y:3500},
+    {x:3430,y:3700},{x:3460,y:3900},{x:3500,y:4100},{x:3530,y:4300},
+    {x:3560,y:4500},{x:3580,y:4700},{x:3600,y:4900},{x:3620,y:5100},
+    {x:3640,y:5300},{x:3660,y:5500},{x:3680,y:5800},{x:3700,y:6100},
+    {x:3720,y:6400},{x:3740,y:7000}
+];
+const RW=140; // river width
 
-        <!-- Round End -->
-        <div id="round-end" class="hidden">
-            <h2 id="round-winner"></h2>
-            <p id="round-reason"></p>
-        </div>
-    </div>
+// Nábřeží (embankments) along the river
+const embankments=[
+    // East bank
+    {pts:[{x:3380,y:800},{x:3350,y:1100},{x:3330,y:1400},{x:3315,y:1700},{x:3310,y:1900},{x:3310,y:2100},{x:3315,y:2300},{x:3325,y:2500},{x:3340,y:2700},{x:3360,y:2900},{x:3380,y:3100},{x:3410,y:3300},{x:3440,y:3500}], w:35, side:1, name:"Smetanovo nábř."},
+    // West bank
+    {pts:[{x:3220,y:800},{x:3190,y:1100},{x:3170,y:1400},{x:3155,y:1700},{x:3150,y:1900},{x:3150,y:2100},{x:3155,y:2300},{x:3165,y:2500},{x:3180,y:2700},{x:3200,y:2900}], w:30, side:-1, name:"Janáčkovo nábř."},
+];
 
-    <script src="js/utils.js"></script>
-    <script src="js/audio.js"></script>
-    <script src="js/weapons.js"></script>
-    <script src="js/map.js"></script>
-    <script src="js/player.js"></script>
-    <script src="js/bot.js"></script>
-    <script src="js/raycaster.js"></script>
-    <script src="js/game.js"></script>
-    <script src="js/main.js"></script>
+// Bridges with real names and positions
+const bridges=[
+    {y:900, name:"Libeňský most", w:50},
+    {y:1200, name:"Hlávkův most", w:50},
+    {y:1500, name:"Štefánikův most", w:45},
+    {y:1800, name:"Čechův most", w:40},
+    {y:2150, name:"Mánesův most", w:40},
+    {y:2550, name:"Karlův most", w:30, stone:true},
+    {y:2900, name:"Most Legií", w:45},
+    {y:3300, name:"Jiráskův most", w:45},
+    {y:3700, name:"Palackého most", w:45},
+    {y:4100, name:"Železniční most", w:35, rail:true},
+    {y:4500, name:"Vyšehradský most", w:40},
+    {y:5200, name:"Barrandovský most", w:55},
+];
+
+// === ROADS - much denser realistic network ===
+const roads=[
+    // ---- MAJOR E-W ----
+    // Evropská / Bělohorská -> M. Horákové -> Hlávkova
+    {pts:[{x:0,y:900},{x:600,y:900},{x:1200,y:950},{x:1800,y:1000},{x:2400,y:1050},{x:2800,y:1100},{x:3100,y:1100},{x:3500,y:1100},{x:4000,y:1100},{x:4600,y:1050},{x:5200,y:1000}],w:48,name:"Milady Horákové",major:true},
+    // Nábřeží E.Beneše / Kpt.Jaroše
+    {pts:[{x:3100,y:1350},{x:3500,y:1350},{x:4000,y:1300},{x:4400,y:1300}],w:38,name:"nábř. Kpt. Jaroše"},
+    // Revoluční -> Dlouhá area
+    {pts:[{x:3400,y:1600},{x:3700,y:1600},{x:4100,y:1600},{x:4500,y:1650}],w:35,name:"Dlouhá"},
+    // Celená / Celetná
+    {pts:[{x:3550,y:1950},{x:3700,y:1950},{x:3900,y:1950}],w:22,name:"Celetná"},
+    // Na Příkopě - the main boulevard
+    {pts:[{x:3300,y:2200},{x:3600,y:2200},{x:3900,y:2200},{x:4200,y:2200},{x:4600,y:2250},{x:5200,y:2300}],w:48,name:"Na Příkopě",major:true},
+    // Národní třída
+    {pts:[{x:3200,y:2700},{x:3500,y:2700},{x:3800,y:2750},{x:4100,y:2800}],w:40,name:"Národní třída",major:true},
+    // 28.října
+    {pts:[{x:3800,y:2200},{x:3800,y:2400},{x:3800,y:2700}],w:35,name:"28. října"},
+    // Vodičkova
+    {pts:[{x:3600,y:2450},{x:3800,y:2500},{x:4000,y:2550}],w:30,name:"Vodičkova"},
+    // Žitná / Ječná
+    {pts:[{x:3500,y:3200},{x:3900,y:3200},{x:4300,y:3200},{x:4800,y:3200},{x:5400,y:3300}],w:38,name:"Žitná"},
+    // Ječná
+    {pts:[{x:3700,y:3000},{x:4000,y:3050},{x:4300,y:3100}],w:30,name:"Ječná"},
+    // Wilsonova / Vinohradská
+    {pts:[{x:4100,y:2400},{x:4600,y:2450},{x:5200,y:2500},{x:5800,y:2600},{x:6500,y:2800},{x:7200,y:3000},{x:8000,y:3200}],w:48,name:"Vinohradská",major:true},
+    // Rumunská / Anglická
+    {pts:[{x:4500,y:2700},{x:4800,y:2800},{x:5100,y:2900}],w:28,name:"Anglická"},
+    // Korunní
+    {pts:[{x:4600,y:2500},{x:5000,y:2700},{x:5500,y:2900},{x:6000,y:3100},{x:6500,y:3300}],w:32,name:"Korunní"},
+    // Jižní spojka
+    {pts:[{x:0,y:5500},{x:1000,y:5400},{x:2000,y:5300},{x:3000,y:5200},{x:4000,y:5100},{x:5000,y:5100},{x:6000,y:5200},{x:7000,y:5400},{x:9000,y:5600}],w:55,name:"Jižní spojka",major:true},
+    // Strakonická
+    {pts:[{x:0,y:4200},{x:800,y:4100},{x:1600,y:3900},{x:2400,y:3700},{x:3000,y:3500},{x:3200,y:3300}],w:45,name:"Strakonická",major:true},
+    // Plzeňská
+    {pts:[{x:0,y:3200},{x:600,y:3150},{x:1200,y:3100},{x:1800,y:3050},{x:2400,y:3000},{x:2800,y:2950}],w:42,name:"Plzeňská",major:true},
+    // Patočkova / Hradčanská area
+    {pts:[{x:0,y:1500},{x:500,y:1500},{x:1000,y:1600},{x:1500,y:1700},{x:2000,y:1800},{x:2500,y:1900},{x:2900,y:1950}],w:40,name:"Patočkova"},
+    // Jelení -> Chotkova
+    {pts:[{x:2700,y:1500},{x:2500,y:1600},{x:2300,y:1700},{x:2100,y:1800}],w:28,name:"Chotkova"},
+    // Nerudova (winding up to castle)
+    {pts:[{x:3000,y:2300},{x:2800,y:2200},{x:2600,y:2100},{x:2400,y:2000},{x:2200,y:1900}],w:22,name:"Nerudova"},
+    // Mostecká
+    {pts:[{x:3100,y:2550},{x:3200,y:2450},{x:3280,y:2400}],w:22,name:"Mostecká"},
+    // Karmelitská / Újezd
+    {pts:[{x:3000,y:2200},{x:3000,y:2500},{x:3000,y:2800},{x:3000,y:3100}],w:32,name:"Karmelitská"},
+    // Vítězná
+    {pts:[{x:2900,y:2900},{x:3100,y:2900},{x:3200,y:2900}],w:30,name:"Vítězná"},
+    // Nábřeží - east side
+    {pts:[{x:3380,y:1700},{x:3380,y:2000},{x:3380,y:2300},{x:3380,y:2600},{x:3400,y:2900},{x:3430,y:3200},{x:3460,y:3500}],w:38,name:"Masarykovo nábř."},
+    // Koněvova / Žižkov
+    {pts:[{x:4500,y:1400},{x:5000,y:1450},{x:5500,y:1500},{x:6000,y:1550},{x:6500,y:1600}],w:35,name:"Koněvova"},
+    // Seifertova
+    {pts:[{x:4500,y:1700},{x:5000,y:1700},{x:5500,y:1750}],w:32,name:"Seifertova"},
+    // Husitská
+    {pts:[{x:4200,y:1400},{x:4500,y:1500},{x:4800,y:1600},{x:5000,y:1700}],w:30,name:"Husitská"},
+    // Trojská
+    {pts:[{x:3500,y:0},{x:3500,y:300},{x:3500,y:600},{x:3500,y:900}],w:38,name:"Trojská"},
+
+    // ---- MAJOR N-S ----
+    // Magistrála (5. května -> Legerova)
+    {pts:[{x:4200,y:0},{x:4200,y:500},{x:4200,y:1000},{x:4150,y:1500},{x:4100,y:2000},{x:4100,y:2400},{x:4100,y:2800},{x:4100,y:3200},{x:4150,y:3600},{x:4200,y:4000},{x:4200,y:4500},{x:4200,y:5000},{x:4200,y:5500},{x:4200,y:6000},{x:4200,y:7000}],w:55,name:"Magistrála",major:true},
+    // Revoluční
+    {pts:[{x:3700,y:1300},{x:3700,y:1600},{x:3700,y:1900},{x:3700,y:2200}],w:38,name:"Revoluční"},
+    // Pařížská (luxury street)
+    {pts:[{x:3550,y:1700},{x:3550,y:1900},{x:3550,y:2100}],w:30,name:"Pařížská"},
+    // Václavské náměstí (iconic wide boulevard)
+    {pts:[{x:4000,y:2200},{x:4000,y:2500},{x:4000,y:2800},{x:4000,y:3100},{x:4000,y:3400}],w:65,name:"Václavské nám.",major:true},
+    // Spálená
+    {pts:[{x:3600,y:2700},{x:3600,y:3000},{x:3600,y:3200}],w:30,name:"Spálená"},
+    // Legerova / I.P.Pavlova
+    {pts:[{x:4300,y:2200},{x:4300,y:2600},{x:4300,y:3000},{x:4300,y:3400},{x:4300,y:3800},{x:4300,y:4200}],w:42,name:"Legerova"},
+    // Bělehradská
+    {pts:[{x:4500,y:2600},{x:4500,y:3000},{x:4500,y:3400},{x:4500,y:3800}],w:32,name:"Bělehradská"},
+    // Resslova
+    {pts:[{x:3400,y:2900},{x:3400,y:3200},{x:3400,y:3500},{x:3400,y:3800}],w:32,name:"Resslova"},
+    // Sokolská
+    {pts:[{x:4200,y:2800},{x:4300,y:3100},{x:4400,y:3400},{x:4500,y:3700},{x:4600,y:4100}],w:32,name:"Sokolská"},
+    // Argentinská
+    {pts:[{x:4000,y:0},{x:4000,y:400},{x:4000,y:800},{x:4000,y:1100}],w:48,name:"Argentinská",major:true},
+    // Bubenské nábřeží
+    {pts:[{x:3500,y:500},{x:3500,y:800},{x:3500,y:1100}],w:35,name:"Bubenské nábř."},
+    // Smíchovská strana - Plzeňská N-S
+    {pts:[{x:2600,y:2900},{x:2600,y:3200},{x:2600,y:3500},{x:2600,y:3800},{x:2600,y:4200},{x:2600,y:4600},{x:2600,y:5000}],w:38,name:"Nádražní"},
+    // Štefánikova
+    {pts:[{x:2800,y:2800},{x:2800,y:3100},{x:2800,y:3400}],w:30,name:"Štefánikova"},
+    // Pod Vyšehradem area
+    {pts:[{x:3500,y:3800},{x:3550,y:4100},{x:3580,y:4400},{x:3600,y:4700}],w:35,name:"Vyšehradská"},
+    // Nuselská / 5. května south
+    {pts:[{x:4200,y:4200},{x:4200,y:4600},{x:4200,y:5000}],w:45,name:"5. května"},
+    // Holešovice area
+    {pts:[{x:3800,y:700},{x:4200,y:700},{x:4600,y:700},{x:5000,y:700}],w:38,name:"U Průhonu"},
+    // Komunardů
+    {pts:[{x:3800,y:500},{x:3800,y:800},{x:3800,y:1100}],w:32,name:"Komunardů"},
+    // Dukelských hrdinů
+    {pts:[{x:3600,y:1100},{x:3600,y:1400},{x:3600,y:1600}],w:30,name:"Dukelských hr."},
+    // Těšnov
+    {pts:[{x:3500,y:1300},{x:3800,y:1400},{x:4100,y:1450},{x:4200,y:1500}],w:38,name:"Těšnov"},
+
+    // ---- CONNECTING / SMALLER STREETS ----
+    // Old Town grid
+    {pts:[{x:3450,y:1700},{x:3450,y:1950},{x:3450,y:2100}],w:20,name:"Kaprova"},
+    {pts:[{x:3550,y:2100},{x:3700,y:2100}],w:18,name:"Železná"},
+    {pts:[{x:3600,y:1800},{x:3600,y:2000},{x:3600,y:2200}],w:20,name:"Havířská"},
+    {pts:[{x:3400,y:1900},{x:3600,y:1950}],w:18,name:"Maiselova"},
+    // New Town grid
+    {pts:[{x:3800,y:2200},{x:3800,y:2500},{x:3800,y:2700}],w:28,name:"Jindřišská"},
+    {pts:[{x:3900,y:2500},{x:4100,y:2500}],w:24,name:"Opletalova"},
+    {pts:[{x:3900,y:2700},{x:4100,y:2700}],w:22,name:"Štěpánská"},
+    {pts:[{x:3700,y:2900},{x:3700,y:3200}],w:25,name:"Myslíkova"},
+    // Vinohrady grid
+    {pts:[{x:4500,y:2400},{x:4500,y:2600}],w:24,name:"Mánesova"},
+    {pts:[{x:4700,y:2200},{x:4700,y:2500},{x:4700,y:2800}],w:26,name:"Slezská"},
+    {pts:[{x:4900,y:2400},{x:4900,y:2700},{x:4900,y:3000}],w:24,name:"Blanická"},
+    // Karlín
+    {pts:[{x:4200,y:1200},{x:4500,y:1200},{x:4800,y:1200}],w:32,name:"Sokolovská"},
+    {pts:[{x:4400,y:1100},{x:4400,y:1300},{x:4400,y:1500}],w:26,name:"Křižíkova"},
+    // Dejvice area
+    {pts:[{x:1800,y:1000},{x:2200,y:1050},{x:2600,y:1100}],w:35,name:"Jugoslávských partyzánů"},
+    {pts:[{x:2000,y:800},{x:2000,y:1100},{x:2000,y:1400}],w:30,name:"Evropská"},
+    {pts:[{x:2200,y:1100},{x:2200,y:1400},{x:2200,y:1700}],w:28,name:"Dejvická"},
+    // Smíchov
+    {pts:[{x:2400,y:3300},{x:2800,y:3300}],w:28,name:"Lidická"},
+    {pts:[{x:2600,y:3000},{x:2600,y:3200}],w:24,name:"Holečkova"},
+    // Vysočany / outer
+    {pts:[{x:5800,y:1000},{x:5800,y:1500},{x:5800,y:2000},{x:5800,y:2500}],w:40,name:"Vysočanská"},
+    {pts:[{x:6200,y:500},{x:6200,y:1000},{x:6200,y:1500},{x:6200,y:2000}],w:38,name:"Kolbenova"},
+    // Pankrác/Budějovická
+    {pts:[{x:4000,y:4500},{x:4000,y:5000},{x:4000,y:5500}],w:38,name:"Budějovická"},
+    {pts:[{x:3800,y:4800},{x:4200,y:4800},{x:4600,y:4800}],w:35,name:"Na Pankráci"},
+    // Ring road east
+    {pts:[{x:6800,y:0},{x:6800,y:1000},{x:6800,y:2000},{x:6800,y:3000},{x:6800,y:4000},{x:6800,y:5000},{x:6800,y:6000},{x:6800,y:7000}],w:50,name:"Průmyslová",major:true},
+];
+
+// === INTERSECTION GRAPH ===
+let intersections=[];
+function buildIntersections(){
+    intersections=[];
+    const SNAP=60;
+    let allPts=[];
+    for(let ri=0;ri<roads.length;ri++)
+        for(let pi=0;pi<roads[ri].pts.length;pi++)
+            allPts.push({x:roads[ri].pts[pi].x,y:roads[ri].pts[pi].y,ri,pi,ref:roads[ri].pts[pi]});
+    let assigned=new Array(allPts.length).fill(-1);
+    let clusters=[];
+    for(let i=0;i<allPts.length;i++){
+        if(assigned[i]>=0)continue;
+        let cl=[i];assigned[i]=clusters.length;
+        for(let j=i+1;j<allPts.length;j++){
+            if(assigned[j]>=0||allPts[j].ri===allPts[i].ri)continue;
+            // Check distance to any member of the cluster
+            let near=false;
+            for(let ci of cl){if(Math.hypot(allPts[ci].x-allPts[j].x,allPts[ci].y-allPts[j].y)<SNAP){near=true;break}}
+            if(near){cl.push(j);assigned[j]=clusters.length}
+        }
+        if(cl.length>1)clusters.push(cl);
+    }
+    for(let cl of clusters){
+        let sx=0,sy=0,maxW=0,roadSet=new Set();
+        for(let idx of cl){sx+=allPts[idx].x;sy+=allPts[idx].y;roadSet.add(allPts[idx].ri);maxW=Math.max(maxW,roads[allPts[idx].ri].w)}
+        sx/=cl.length;sy/=cl.length;
+        for(let idx of cl){allPts[idx].ref.x=sx;allPts[idx].ref.y=sy}
+        intersections.push({x:sx,y:sy,r:maxW/2+8,roads:[...roadSet]});
+    }
+}
+
+// Parks with more accurate positions
+const parks=[
+    {x:2700,y:1200,w:600,h:400,name:"Letenské sady",trees:true},
+    {x:1500,y:2200,w:600,h:900,name:"Petřínské sady",trees:true},
+    {x:2100,y:1600,w:300,h:350,name:"Královská zahrada",trees:true},
+    {x:3700,y:600,w:500,h:350,name:"Stromovka",trees:true},
+    {x:3400,y:4000,w:400,h:500,name:"Vyšehrad",trees:true},
+    {x:4800,y:2700,w:350,h:350,name:"Riegrovy sady",trees:true},
+    {x:4600,y:3500,w:300,h:300,name:"Havlíčkovy sady",trees:true},
+    {x:5300,y:1600,w:300,h:250,name:"Vítkov",trees:true},
+    {x:4600,y:800,w:250,h:200,name:"Kaizlovy sady",trees:true},
+    {x:2000,y:3400,w:300,h:250,name:"Kinského zahrada",trees:true},
+    {x:3700,y:3600,w:200,h:250,name:"Karlovo nám.",trees:false},
+    {x:3200,y:1600,w:200,h:250,name:"Starom. nám.",trees:false},
+];
+
+// Landmarks
+const landmarks=[
+    {x:3550,y:1900,label:"Staroměstské nám.",color:"#d4a847",w:140,h:110,type:"square"},
+    {x:3550,y:1870,label:"Orloj",color:"#c8a040",w:20,h:20,type:"tower"},
+    {x:4000,y:2800,label:"Václavské nám.",color:"#c4984a",w:65,h:600,type:"boulevard"},
+    {x:2200,y:1800,label:"Pražský hrad",color:"#7a3b10",w:500,h:250,type:"castle"},
+    {x:2400,y:2100,label:"Malostranské nám.",color:"#b89050",w:100,h:80,type:"square"},
+    {x:3285,y:2550,label:"Karlův most",color:"#8B7355",w:20,h:20,type:"bridge"},
+    {x:5100,y:1700,label:"Žižkovská věž",color:"#888",w:25,h:25,type:"tower"},
+    {x:4100,y:2200,label:"Národní muzeum",color:"#8B6914",w:120,h:70,type:"museum"},
+    {x:3500,y:1750,label:"Josefov",color:"#6B4423",w:150,h:130,type:"district"},
+    {x:2900,y:1300,label:"Letná",color:"#2d5a1e",w:100,h:50,type:"park"},
+    {x:1800,y:2600,label:"Petřín",color:"#2d5a1e",w:100,h:50,type:"park"},
+    {x:1800,y:2650,label:"Petřínská rozhledna",color:"#777",w:15,h:15,type:"tower"},
+    {x:3550,y:4200,label:"Vyšehrad",color:"#6B4423",w:200,h:200,type:"castle"},
+    {x:4200,y:2350,label:"Hlavní nádraží",color:"#555",w:130,h:110,type:"station"},
+    {x:2600,y:3200,label:"Smíchov",color:"#555",w:80,h:50,type:"district"},
+    {x:4700,y:3100,label:"Vinohrady",color:"#555",w:80,h:50,type:"district"},
+    {x:5000,y:1500,label:"Žižkov",color:"#555",w:60,h:40,type:"district"},
+    {x:3800,y:900,label:"Holešovice",color:"#555",w:70,h:40,type:"district"},
+    {x:2100,y:1100,label:"Dejvice",color:"#555",w:60,h:40,type:"district"},
+    {x:4400,y:1300,label:"Karlín",color:"#555",w:60,h:40,type:"district"},
+    {x:4200,y:4800,label:"Pankrác",color:"#555",w:80,h:50,type:"district"},
+    {x:3700,y:3400,label:"Karlovo nám.",color:"#b89050",w:100,h:100,type:"square"},
+    {x:3400,y:2200,label:"Můstek",color:"#888",w:40,h:30,type:"metro"},
+    {x:4300,y:3000,label:"I.P.Pavlova",color:"#888",w:40,h:30,type:"metro"},
+    {x:2800,y:3100,label:"Anděl",color:"#888",w:40,h:30,type:"metro"},
+    {x:3550,y:2100,label:"Prašná brána",color:"#8B6914",w:18,h:18,type:"tower"},
+    {x:3300,y:2200,label:"Národní divadlo",color:"#9B7040",w:60,h:50,type:"museum"},
+    {x:4000,y:2100,label:"Masarykovo nádraží",color:"#555",w:100,h:70,type:"station"},
+];
+
+// Streetlights along major roads
+let streetlights=[];
+
+// Precomputed tree positions for parks
+let treePosCache={};
+
+function getRiverX(y){
+    for(let i=0;i<riverPath.length-1;i++){
+        if(y>=riverPath[i].y&&y<=riverPath[i+1].y){
+            let t=(y-riverPath[i].y)/(riverPath[i+1].y-riverPath[i].y);
+            return riverPath[i].x+t*(riverPath[i+1].x-riverPath[i].x);
+        }
+    }
+    return y<riverPath[0].y?riverPath[0].x:riverPath[riverPath.length-1].x;
+}
+function inRiver(x,y){return Math.abs(x-getRiverX(y))<RW/2+15}
+function inPark(x,y){for(let p of parks)if(x>p.x&&x<p.x+p.w&&y>p.y&&y<p.y+p.h)return true;return false}
+function ptSegDist(px,py,x1,y1,x2,y2){
+    let dx=x2-x1,dy=y2-y1,l2=dx*dx+dy*dy;
+    if(!l2)return Math.hypot(px-x1,py-y1);
+    let t=Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/l2));
+    return Math.hypot(px-(x1+t*dx),py-(y1+t*dy));
+}
+function onRoad(x,y){
+    for(let r of roads)for(let i=0;i<r.pts.length-1;i++)
+        if(ptSegDist(x,y,r.pts[i].x,r.pts[i].y,r.pts[i+1].x,r.pts[i+1].y)<r.w/2+8)return true;
+    for(let b of bridges){let rx=getRiverX(b.y);if(Math.abs(y-b.y)<25&&Math.abs(x-rx)<RW/2+40)return true;}
+    return false;
+}
+function onRoadOrIntersection(x,y,margin){
+    margin=margin||0;
+    for(let r of roads)for(let i=0;i<r.pts.length-1;i++)
+        if(ptSegDist(x,y,r.pts[i].x,r.pts[i].y,r.pts[i+1].x,r.pts[i+1].y)<r.w/2+10+margin)return true;
+    for(let ix of intersections)if(Math.hypot(x-ix.x,y-ix.y)<ix.r+margin)return true;
+    for(let b of bridges){let rx=getRiverX(b.y);if(Math.abs(y-b.y)<25+margin&&Math.abs(x-rx)<RW/2+40+margin)return true;}
+    return false;
+}
+
+// --- BRIDGE ROADS (connect both banks) ---
+let bridgeRoadsAdded=false;
+function addBridgeRoads(){
+    if(bridgeRoadsAdded)return;
+    bridgeRoadsAdded=true;
+    for(let b of bridges){
+        let rx=getRiverX(b.y);
+        let hw=RW/2+80;
+        roads.push({pts:[{x:rx-hw,y:b.y},{x:rx,y:b.y},{x:rx+hw,y:b.y}],w:b.w+10,name:b.name,isBridge:true});
+    }
+}
+function onBridge(x,y){
+    for(let r of roads){
+        if(!r.isBridge)continue;
+        for(let i=0;i<r.pts.length-1;i++)
+            if(ptSegDist(x,y,r.pts[i].x,r.pts[i].y,r.pts[i+1].x,r.pts[i+1].y)<r.w/2+25)return true;
+    }
+    return false;
+}
+
+// --- BUILDINGS ---
+let buildings=[];
+function genBuildings(){
+    buildings=[];
+    // Seeded random for consistent buildings
+    let seed=42;
+    function srand(){seed=(seed*16807+0)%2147483647;return(seed-1)/2147483646}
+    const colors=[
+        '#A0785A','#B8956E','#C4A882','#D2B48C','#8B7355',
+        '#CD853F','#CC9966','#BB8844','#9B7653','#8B6914',
+        '#E8D0A0','#D4C0A0','#C8B090','#DDC8A8','#F0E0C0',
+        '#C09060','#A07848','#B08858','#D4A060','#BFA070',
+        '#907868','#786050','#685848','#A09080','#B0A090',
+    ];
+    for(let bx=80;bx<WW-80;bx+=95){
+        for(let by=80;by<WH-80;by+=95){
+            if(inRiver(bx+35,by+35))continue;
+            if(inPark(bx+35,by+35))continue;
+            if(srand()<0.5){
+                let w=35+srand()*55,h=35+srand()*55;
+                let floors=1+Math.floor(srand()*5);
+                let colIdx=Math.floor(srand()*colors.length);
+                let roofR=srand();
+                // Check all corners + center with margin against roads & intersections
+                let blocked=false;
+                let chk=[[bx-5,by-5],[bx+w+5,by-5],[bx-5,by+h+5],[bx+w+5,by+h+5],[bx+w/2,by+h/2]];
+                for(let c of chk){if(onRoadOrIntersection(c[0],c[1],12)){blocked=true;break}}
+                if(blocked)continue;
+                // Taller buildings near center and Pankrác
+                let cx=bx+w/2,cy=by+h/2;
+                let distCenter=Math.hypot(cx-4000,cy-2500);
+                let distPankrac=Math.hypot(cx-4200,cy-4800);
+                if(distCenter<600)floors+=2;
+                if(distPankrac<400)floors+=4;
+                buildings.push({x:bx,y:by,w,h,
+                    color:colors[colIdx],
+                    floors:Math.min(floors,8),
+                    roofColor:roofR>.5?'#8B4513':'#654321'
+                });
+            }
+        }
+    }
+    // Generate streetlights
+    streetlights=[];
+    for(let r of roads){
+        for(let i=0;i<r.pts.length-1;i++){
+            let dx=r.pts[i+1].x-r.pts[i].x,dy=r.pts[i+1].y-r.pts[i].y;
+            let len=Math.hypot(dx,dy),step=80;
+            let nx=-dy/len,ny=dx/len;
+            for(let t=0;t<len;t+=step){
+                let x=r.pts[i].x+(dx/len)*t+nx*(r.w/2+5);
+                let y=r.pts[i].y+(dy/len)*t+ny*(r.w/2+5);
+                if(!inRiver(x,y))streetlights.push({x,y});
+            }
+        }
+    }
+    // Cache tree positions
+    treePosCache={};
+    for(let p of parks){
+        let key=p.name;
+        treePosCache[key]=[];
+        if(!p.trees)continue;
+        for(let tx=p.x+15;tx<p.x+p.w-15;tx+=28){
+            for(let ty=p.y+15;ty<p.y+p.h-15;ty+=28){
+                let ox=Math.sin(tx*0.1+ty*0.13)*8;
+                let oy=Math.cos(tx*0.13+ty*0.1)*8;
+                let r=6+Math.sin(tx+ty)*2;
+                treePosCache[key].push({x:tx+ox,y:ty+oy,r});
+            }
+        }
+    }
+}
+
+// --- PLAYER ---
+let player={
+    x:4000,y:2800,vx:0,vy:0,angle:-Math.PI/2,speed:0,
+    inVehicle:true,vehicle:null,wanted:0,wantedTimer:0,
+    health:100,onFoot:false,footSpeed:130,driftAngle:0,
+    skidMarks:[],
+};
+
+// --- VEHICLES ---
+let vehicles=[];
+const vTypes=[
+    {name:"Škoda Octavia",color:"#4466aa",w:18,h:40,maxSpeed:380,accel:260,handling:2.7},
+    {name:"Škoda Fabia",color:"#cc4444",w:16,h:35,maxSpeed:340,accel:240,handling:3.1},
+    {name:"Tatra 613",color:"#1a1a1a",w:20,h:44,maxSpeed:340,accel:220,handling:2.0},
+    {name:"Škoda Superb",color:"#666",w:19,h:42,maxSpeed:410,accel:280,handling:2.6},
+    {name:"BMW 330i",color:"#0a0a2a",w:18,h:40,maxSpeed:450,accel:310,handling:2.9},
+    {name:"Audi A6",color:"#222",w:19,h:43,maxSpeed:440,accel:300,handling:2.7},
+    {name:"Tramvaj T3",color:"#cc2222",w:26,h:85,maxSpeed:110,accel:70,handling:0.3,isTram:true},
+    {name:"Dodávka",color:"#ddd",w:22,h:50,maxSpeed:260,accel:170,handling:1.6},
+    {name:"Taxi AAA",color:"#ffcc00",w:18,h:40,maxSpeed:370,accel:260,handling:2.6,isTaxi:true},
+    {name:"Policie ČR",color:"#eee",w:19,h:42,maxSpeed:400,accel:290,handling:2.9,isPolice:true},
+    {name:"VW Golf",color:"#336633",w:17,h:38,maxSpeed:370,accel:255,handling:2.8},
+    {name:"Mercedes E",color:"#333",w:19,h:44,maxSpeed:430,accel:295,handling:2.6},
+    {name:"Hyundai i30",color:"#5566aa",w:17,h:38,maxSpeed:350,accel:240,handling:2.7},
+];
+
+function spawnVehicles(){
+    vehicles=[];
+    for(let r of roads){
+        for(let i=0;i<r.pts.length-1;i++){
+            let dx=r.pts[i+1].x-r.pts[i].x,dy=r.pts[i+1].y-r.pts[i].y;
+            let len=Math.hypot(dx,dy);
+            let num=Math.max(1,Math.floor(len/300));
+            for(let c=0;c<num;c++){
+                let t=(c+0.5)/num+Math.random()*0.2;
+                if(t>1)continue;
+                let x=r.pts[i].x+t*dx,y=r.pts[i].y+t*dy;
+                let ang=Math.atan2(dy,dx);
+                let side=(Math.random()>.5?1:-1);
+                x+=Math.cos(ang+Math.PI/2)*side*(r.w*0.2);
+                y+=Math.sin(ang+Math.PI/2)*side*(r.w*0.2);
+                if(inRiver(x,y))continue;
+                let ti=Math.floor(Math.random()*9);// exclude police+special
+                if(Math.random()<.06)ti=8;// taxi
+                if(r.name.includes("Tramvaj")||Math.random()<.02)ti=6;// tram
+                let fwd=side<0?-1:1;
+                vehicles.push({x,y,angle:ang+(side<0?Math.PI:0),speed:120*(0.5+Math.random()*0.6),
+                    vx:0,vy:0,type:vTypes[ti],roadIdx:roads.indexOf(r),segIdx:i,ai:true,occupied:false,fwd,
+                    colorVar:Math.random()>.5?null:['#993333','#336699','#669933','#996633','#333366','#663366','#339966','#996600','#444','#777','#aaa'][Math.floor(Math.random()*11)]
+                });
+            }
+        }
+    }
+    let pc={x:player.x,y:player.y,angle:player.angle,speed:0,vx:0,vy:0,
+        type:vTypes[3],ai:false,occupied:true};
+    vehicles.push(pc);player.vehicle=pc;
+}
+
+// --- PEDESTRIANS ---
+let peds=[];
+function spawnPeds(){
+    peds=[];
+    const skins=['#d4a574','#c49464','#f5d0b0','#e0c0a0','#a07050','#704030'];
+    const shirts=['#cc3333','#3333cc','#33cc33','#cccc33','#cc33cc','#33cccc','#666','#fff','#ff6600','#993366','#336699','#669933'];
+    for(let i=0;i<300;i++){
+        let x,y,att=0;
+        do{x=Math.random()*WW;y=Math.random()*WH;att++}
+        while((inRiver(x,y)||!onRoad(x,y))&&att<30);
+        if(att>=30)continue;
+        // offset to sidewalk
+        x+=(Math.random()-.5)*40;
+        y+=(Math.random()-.5)*40;
+        peds.push({x,y,angle:Math.random()*Math.PI*2,speed:35*(0.5+Math.random()*.8),
+            skin:skins[Math.floor(Math.random()*skins.length)],
+            shirt:shirts[Math.floor(Math.random()*shirts.length)],
+            panic:false,panicT:0,walkT:Math.random()*5,
+        });
+    }
+}
+
+// --- POLICE ---
+let police=[];
+function spawnPolice(){
+    police=[];
+    const pos=[{x:3800,y:1800},{x:4300,y:2600},{x:3400,y:3000},{x:2800,y:2500},
+        {x:4800,y:2200},{x:4100,y:4300},{x:3600,y:1200},{x:5000,y:1700}];
+    for(let p of pos)police.push({x:p.x,y:p.y,angle:Math.random()*Math.PI*2,
+        speed:0,vx:0,vy:0,type:vTypes[9],ai:true,occupied:true,isPolice:true,
+        chasing:false,siren:Math.random()*6.28});
+}
+
+// ============================================================
+// MOBILE TOUCH CONTROLS
+// ============================================================
+const jBase=document.getElementById('joystick-base');
+const jKnob=document.getElementById('joystick-knob');
+const jZone=document.getElementById('joystick-zone');
+
+function setupTouch(){
+    // Joystick
+    jZone.addEventListener('touchstart',jStart,{passive:false});
+    jZone.addEventListener('touchmove',jMove,{passive:false});
+    jZone.addEventListener('touchend',jEnd,{passive:false});
+    jZone.addEventListener('touchcancel',jEnd,{passive:false});
+    // Buttons
+    setupBtn('btn-gas','gas');
+    setupBtn('btn-brake','brake');
+    setupBtn('btn-handbrake','hbrake');
+    document.getElementById('btn-action').addEventListener('touchstart',e=>{e.preventDefault();if(running)toggleVehicle()},{passive:false});
+    document.getElementById('btn-steal').addEventListener('touchstart',e=>{e.preventDefault();if(running)carjack()},{passive:false});
+}
+
+function setupBtn(id,key){
+    let el=document.getElementById(id);
+    el.addEventListener('touchstart',e=>{e.preventDefault();touch[key]=true;el.classList.add('pressed')},{passive:false});
+    el.addEventListener('touchend',e=>{e.preventDefault();touch[key]=false;el.classList.remove('pressed')},{passive:false});
+    el.addEventListener('touchcancel',e=>{touch[key]=false;el.classList.remove('pressed')},{passive:false});
+}
+
+function jStart(e){
+    e.preventDefault();
+    let t=e.changedTouches[0];
+    joystickId=t.identifier;
+    joystickActive=true;
+    jMove(e);
+}
+function jMove(e){
+    e.preventDefault();
+    if(!joystickActive)return;
+    for(let t of e.touches){
+        if(t.identifier===joystickId){
+            let rect=jZone.getBoundingClientRect();
+            let cx=rect.left+rect.width/2;
+            let cy=rect.top+rect.height/2;
+            let dx=t.clientX-cx,dy=t.clientY-cy;
+            let dist=Math.hypot(dx,dy);
+            let maxR=65;
+            if(dist>maxR){dx=dx/dist*maxR;dy=dy/dist*maxR;dist=maxR}
+            jKnob.style.left=(50+dx/1.4)+'%';
+            jKnob.style.top=(50+dy/1.4)+'%';
+            touch.steerX=dx/maxR;
+            touch.steerY=dy/maxR;
+            return;
+        }
+    }
+}
+function jEnd(e){
+    e.preventDefault();
+    for(let t of e.changedTouches){
+        if(t.identifier===joystickId){
+            joystickActive=false;joystickId=null;
+            touch.steerX=0;touch.steerY=0;
+            jKnob.style.left='50%';jKnob.style.top='50%';
+            return;
+        }
+    }
+}
+setupTouch();
+
+// ============================================================
+// KEYBOARD INPUT
+// ============================================================
+addEventListener('keydown',e=>{
+    keys[e.code]=true;
+    if(e.code==='Escape'&&running){running=false;document.getElementById('menu').style.display='flex';document.getElementById('hud').style.display='none'}
+    if(e.code==='KeyF'&&running)toggleVehicle();
+    if(e.code==='KeyE'&&running)carjack();
+});
+addEventListener('keyup',e=>{keys[e.code]=false});
+
+function toggleVehicle(){
+    if(player.inVehicle&&player.vehicle){
+        player.inVehicle=false;player.onFoot=true;
+        player.x=player.vehicle.x+Math.cos(player.vehicle.angle+1.57)*30;
+        player.y=player.vehicle.y+Math.sin(player.vehicle.angle+1.57)*30;
+        player.vehicle.occupied=false;player.vehicle.ai=false;player.vehicle.speed=0;
+        player.vehicle=null;showMsg("Vystoupil jsi z auta");
+    }else if(!player.inVehicle){
+        let best=null,bd=65;
+        for(let v of[...vehicles,...police]){let d=Math.hypot(v.x-player.x,v.y-player.y);if(d<bd){best=v;bd=d}}
+        if(best&&!best.occupied){
+            player.inVehicle=true;player.onFoot=false;player.vehicle=best;
+            best.occupied=true;best.ai=false;
+            showMsg("Nastoupil jsi: "+best.type.name);
+        }
+    }
+}
+function carjack(){
+    if(player.inVehicle)return;
+    let best=null,bd=55;
+    for(let v of vehicles){let d=Math.hypot(v.x-player.x,v.y-player.y);if(d<bd){best=v;bd=d}}
+    if(best){
+        player.inVehicle=true;player.onFoot=false;player.vehicle=best;
+        best.occupied=true;best.ai=false;
+        player.wanted=Math.min(5,player.wanted+1);player.wantedTimer=35;
+        showMsg("Ukradl jsi: "+best.type.name+"!");
+        for(let p of peds)if(Math.hypot(p.x-player.x,p.y-player.y)<160){p.panic=true;p.panicT=5}
+    }
+}
+
+function showMsg(t){document.getElementById('message-display').textContent=t;
+    document.getElementById('message-display').style.opacity='1';msgTimer=3}
+
+// ============================================================
+// COLLISION
+// ============================================================
+function resolveCol(e){
+    let hw=(e.type?e.type.w:10)/2,hh=(e.type?e.type.h:10)/2;
+    for(let b of buildings){
+        if(e.x+hw>b.x&&e.x-hw<b.x+b.w&&e.y+hh>b.y&&e.y-hh<b.y+b.h){
+            let ox=Math.min(e.x+hw-b.x,b.x+b.w-(e.x-hw));
+            let oy=Math.min(e.y+hh-b.y,b.y+b.h-(e.y-hh));
+            if(ox<oy){e.x+=(e.x<b.x+b.w/2?-ox:ox);e.speed*=.3}
+            else{e.y+=(e.y<b.y+b.h/2?-oy:oy);e.speed*=.3}
+        }
+    }
+    if(inRiver(e.x,e.y)&&!onBridge(e.x,e.y)){
+        let rx=getRiverX(e.y);
+        e.x=e.x<rx?rx-RW/2-hw:rx+RW/2+hw;e.speed*=.1;
+        if(e===player.vehicle)showMsg("Pozor - Vltava!");
+    }
+    e.x=Math.max(hw,Math.min(WW-hw,e.x));
+    e.y=Math.max(hh,Math.min(WH-hh,e.y));
+}
+
+// ============================================================
+// UPDATE
+// ============================================================
+function update(dt){
+    if(!running)return;
+    gameTime+=dt;
+    dayPhase=(Math.sin(gameTime*0.02)+1)/2; // 0=night 1=day, slow cycle
+
+    // --- Player in vehicle ---
+    if(player.inVehicle&&player.vehicle){
+        let v=player.vehicle;
+        let acc=0,turn=0,hb=false;
+        // Keyboard
+        if(keys.KeyW||keys.ArrowUp)acc=1;
+        if(keys.KeyS||keys.ArrowDown)acc=-1;
+        if(keys.KeyA||keys.ArrowLeft)turn=-1;
+        if(keys.KeyD||keys.ArrowRight)turn=1;
+        if(keys.Space)hb=true;
+        // Mobile
+        if(touch.gas)acc=1;
+        if(touch.brake)acc=-1;
+        if(touch.hbrake)hb=true;
+        if(Math.abs(touch.steerX)>0.15)turn=touch.steerX;
+
+        let mxSpd=v.type.maxSpeed,ac=v.type.accel,hn=v.type.handling;
+        if(acc>0)v.speed+=ac*dt*acc;
+        else if(acc<0){if(v.speed>10)v.speed-=BRAKE_F*dt;else v.speed-=ac*.6*dt}
+        if(hb){v.speed*=HBRAKE_FRIC;player.driftAngle+=turn*.02*Math.abs(v.speed)/100}
+        else{v.speed*=FRICTION;player.driftAngle*=.9}
+        v.speed=Math.max(-mxSpd*.3,Math.min(mxSpd,v.speed));
+        if(Math.abs(v.speed)>5){
+            let tf=hn*dt*(v.speed>0?1:-1)*Math.min(1,160/(Math.abs(v.speed)+60));
+            v.angle+=turn*tf;
+        }
+        if(hb&&Math.abs(v.speed)>60){player.skidMarks.push({x:v.x,y:v.y,a:0});if(player.skidMarks.length>600)player.skidMarks.shift()}
+        v.vx=Math.cos(v.angle)*v.speed;v.vy=Math.sin(v.angle)*v.speed;
+        v.x+=v.vx*dt;v.y+=v.vy*dt;
+        resolveCol(v);
+        player.x=v.x;player.y=v.y;player.angle=v.angle;
+        // Hit peds
+        for(let p of peds){
+            let d=Math.hypot(p.x-v.x,p.y-v.y);
+            if(d<20&&Math.abs(v.speed)>40){
+                p.x+=Math.cos(v.angle)*55;p.y+=Math.sin(v.angle)*55;
+                p.panic=true;p.panicT=8;
+                player.wanted=Math.min(5,player.wanted+1);player.wantedTimer=40;
+                score-=100;showMsg("Srazil jsi chodce! Wanted +1");
+            }
+        }
+    }else if(player.onFoot){
+        let mx=0,my=0;
+        if(keys.KeyW||keys.ArrowUp)my=-1;if(keys.KeyS||keys.ArrowDown)my=1;
+        if(keys.KeyA||keys.ArrowLeft)mx=-1;if(keys.KeyD||keys.ArrowRight)mx=1;
+        if(Math.abs(touch.steerX)>0.1)mx=touch.steerX;
+        if(Math.abs(touch.steerY)>0.1)my=touch.steerY;
+        if(touch.gas)my=-1;if(touch.brake)my=1;
+        if(mx||my){let a=Math.atan2(my,mx);player.x+=Math.cos(a)*player.footSpeed*dt;player.y+=Math.sin(a)*player.footSpeed*dt;player.angle=a}
+        if(inRiver(player.x,player.y)&&!onBridge(player.x,player.y)){
+            let rx=getRiverX(player.y);player.x=player.x<rx?rx-RW/2-10:rx+RW/2+10}
+        player.x=Math.max(10,Math.min(WW-10,player.x));player.y=Math.max(10,Math.min(WH-10,player.y));
+    }
+
+    // --- AI Traffic (intersection-aware, no teleporting) ---
+    for(let v of vehicles){
+        if(!v.ai||v.occupied)continue;
+        if(v.fwd===undefined)v.fwd=1;
+        if(v.roadIdx>=0){
+            let r=roads[v.roadIdx];
+            if(r){
+                let nextPi=v.segIdx+(v.fwd>0?1:0);
+                if(nextPi>=0&&nextPi<r.pts.length){
+                    let tgt=r.pts[nextPi];
+                    let dx=tgt.x-v.x,dy=tgt.y-v.y,d=Math.hypot(dx,dy);
+                    if(d<35){
+                        if(v.fwd>0){v.segIdx++;}else{v.segIdx--;}
+                        let atEnd=v.fwd>0?v.segIdx>=r.pts.length-1:v.segIdx<=0;
+                        if(atEnd){
+                            let switched=false;
+                            let endPt=r.pts[v.fwd>0?r.pts.length-1:0];
+                            for(let ix of intersections){
+                                if(Math.hypot(ix.x-endPt.x,ix.y-endPt.y)<50){
+                                    let cands=ix.roads.filter(ri=>ri!==v.roadIdx);
+                                    if(cands.length>0){
+                                        let newRi=cands[Math.floor(Math.random()*cands.length)];
+                                        let nr=roads[newRi];
+                                        let bestPi=0,bestD=Infinity;
+                                        for(let pi=0;pi<nr.pts.length;pi++){
+                                            let dd=Math.hypot(nr.pts[pi].x-ix.x,nr.pts[pi].y-ix.y);
+                                            if(dd<bestD){bestD=dd;bestPi=pi}
+                                        }
+                                        v.roadIdx=newRi;v.segIdx=bestPi;
+                                        v.fwd=bestPi<nr.pts.length-1?1:-1;
+                                        switched=true;break;
+                                    }
+                                }
+                            }
+                            if(!switched){v.fwd=-v.fwd}
+                        }
+                    }
+                    let ta=Math.atan2(dy,dx),ad=ta-v.angle;
+                    while(ad>Math.PI)ad-=6.28;while(ad<-Math.PI)ad+=6.28;
+                    v.angle+=ad*2.5*dt;
+                    // Look-ahead braking: slow down if car ahead
+                    let desiredSpd=120;
+                    let lx=v.x+Math.cos(v.angle)*55,ly=v.y+Math.sin(v.angle)*55;
+                    for(let ov of vehicles){
+                        if(ov===v||ov.occupied)continue;
+                        if(Math.hypot(ov.x-lx,ov.y-ly)<30){desiredSpd=30;break}
+                    }
+                    v.speed+=(desiredSpd-v.speed)*dt*2;
+                }else{
+                    v.segIdx=Math.max(0,Math.min(r.pts.length-2,v.segIdx));
+                    v.fwd=-v.fwd;
+                }
+                // Road constraining: pull AI back toward road center
+                let minRD=Infinity,cpx=v.x,cpy=v.y;
+                for(let i=0;i<r.pts.length-1;i++){
+                    let sx=r.pts[i].x,sy=r.pts[i].y,ex=r.pts[i+1].x,ey=r.pts[i+1].y;
+                    let ddx=ex-sx,ddy=ey-sy,l2=ddx*ddx+ddy*ddy;
+                    let t=l2?Math.max(0,Math.min(1,((v.x-sx)*ddx+(v.y-sy)*ddy)/l2)):0;
+                    let px=sx+t*ddx,py=sy+t*ddy;
+                    let dd=Math.hypot(v.x-px,v.y-py);
+                    if(dd<minRD){minRD=dd;cpx=px;cpy=py}
+                }
+                if(minRD>r.w/2){
+                    let pull=Math.min(0.15,(minRD-r.w/2)*0.01);
+                    v.x+=(cpx-v.x)*pull;v.y+=(cpy-v.y)*pull;
+                }
+            }
+        }
+        v.vx=Math.cos(v.angle)*v.speed;v.vy=Math.sin(v.angle)*v.speed;
+        v.x+=v.vx*dt;v.y+=v.vy*dt;
+        v.x=Math.max(20,Math.min(WW-20,v.x));v.y=Math.max(20,Math.min(WH-20,v.y));
+    }
+
+    // --- Vehicle-to-vehicle collision ---
+    let allVeh=[...vehicles,...police];
+    for(let i=0;i<allVeh.length;i++){
+        let a=allVeh[i];
+        if(Math.abs(a.x-player.x)>900||Math.abs(a.y-player.y)>700)continue;
+        let ra=(Math.max(a.type.w,a.type.h))*0.4;
+        for(let j=i+1;j<allVeh.length;j++){
+            let b=allVeh[j];
+            let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
+            let rb=(Math.max(b.type.w,b.type.h))*0.4;
+            let minD=ra+rb;
+            if(d<minD&&d>0.1){
+                let overlap=minD-d;
+                let nx=dx/d,ny=dy/d;
+                let isPlayerA=a.occupied&&a===player.vehicle;
+                let isPlayerB=b.occupied&&b===player.vehicle;
+                if(isPlayerA||isPlayerB){
+                    // Player collision: strong push on AI, light on player
+                    let pf=isPlayerA?0.1:0.9,of=isPlayerA?0.9:0.1;
+                    a.x-=nx*overlap*pf;a.y-=ny*overlap*pf;
+                    b.x+=nx*overlap*of;b.y+=ny*overlap*of;
+                    a.speed*=0.7;b.speed*=0.7;
+                }else{
+                    // AI-AI: only slow down, minimal position push
+                    a.x-=nx*overlap*0.08;a.y-=ny*overlap*0.08;
+                    b.x+=nx*overlap*0.08;b.y+=ny*overlap*0.08;
+                    a.speed*=0.5;b.speed*=0.5;
+                }
+            }
+        }
+    }
+
+    // --- Pedestrians ---
+    for(let p of peds){
+        p.walkT-=dt;
+        if(p.panic){p.panicT-=dt;let dx=p.x-player.x,dy=p.y-player.y,d=Math.hypot(dx,dy);
+            if(d>0){p.x+=(dx/d)*100*dt;p.y+=(dy/d)*100*dt}
+            if(p.panicT<=0)p.panic=false;
+        }else{
+            if(p.walkT<=0){p.angle=Math.random()*6.28;p.walkT=2+Math.random()*4}
+            p.x+=Math.cos(p.angle)*p.speed*dt;p.y+=Math.sin(p.angle)*p.speed*dt;
+            if(inRiver(p.x,p.y)){p.angle+=Math.PI;p.x+=Math.cos(p.angle)*20;p.y+=Math.sin(p.angle)*20}
+        }
+        p.x=Math.max(10,Math.min(WW-10,p.x));p.y=Math.max(10,Math.min(WH-10,p.y));
+        if(player.inVehicle&&player.vehicle){let d=Math.hypot(p.x-player.x,p.y-player.y);
+            if(d<90&&Math.abs(player.vehicle.speed)>100&&!p.panic){p.panic=true;p.panicT=3}}
+    }
+
+    // --- Police ---
+    for(let c of police){
+        c.siren+=dt*8;
+        if(player.wanted>0){c.chasing=true;
+            let dx=player.x-c.x,dy=player.y-c.y,d=Math.hypot(dx,dy);
+            if(d<2500){let ta=Math.atan2(dy,dx),ad=ta-c.angle;
+                while(ad>Math.PI)ad-=6.28;while(ad<-Math.PI)ad+=6.28;
+                c.angle+=ad*2.8*dt;
+                let cs=400*(0.5+player.wanted*0.1);c.speed+=(cs-c.speed)*dt*2;
+            }else c.speed*=.98;
+        }else{c.chasing=false;c.speed*=.94}
+        c.vx=Math.cos(c.angle)*c.speed;c.vy=Math.sin(c.angle)*c.speed;
+        c.x+=c.vx*dt;c.y+=c.vy*dt;resolveCol(c);
+        if(c.chasing&&player.inVehicle&&player.vehicle){
+            let d=Math.hypot(c.x-player.x,c.y-player.y);
+            if(d<30&&Math.abs(player.vehicle.speed)<25){
+                player.wanted=0;player.wantedTimer=0;score-=500;
+                showMsg("Policie tě chytila! -$500");
+                player.vehicle.x=4000;player.vehicle.y=2800;player.vehicle.speed=0;
+                player.x=player.vehicle.x;player.y=player.vehicle.y;
+            }
+        }
+    }
+
+    // Wanted timer
+    if(player.wanted>0){player.wantedTimer-=dt;
+        if(player.wantedTimer<=0){player.wanted=Math.max(0,player.wanted-1);player.wantedTimer=22;
+            if(!player.wanted)showMsg("Wanted level cleared!")}}
+    // Score
+    if(player.inVehicle&&player.vehicle){let s=Math.abs(player.vehicle.speed);if(s>200)score+=dt*(s/80)}
+    // Message
+    if(msgTimer>0){msgTimer-=dt;if(msgTimer<=0)document.getElementById('message-display').style.opacity='0'}
+    // Skid marks age
+    for(let s of player.skidMarks)s.a+=dt;
+    player.skidMarks=player.skidMarks.filter(s=>s.a<20);
+    // Camera smooth follow
+    let tx=player.x-C.width/2,ty=player.y-C.height/2;
+    cam.x+=(tx-cam.x)*.08;cam.y+=(ty-cam.y)*.08;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render(){
+    let w=C.width,h=C.height;
+    let ambient=0.55+dayPhase*0.45; // lighting
+
+    // Background
+    let bgR=Math.floor(32*ambient),bgG=Math.floor(45*ambient),bgB=Math.floor(28*ambient);
+    X.fillStyle=`rgb(${bgR},${bgG},${bgB})`;
+    X.fillRect(0,0,w,h);
+
+    X.save();
+    X.translate(-cam.x,-cam.y);
+
+    let vx1=cam.x-100,vy1=cam.y-100,vx2=cam.x+w+100,vy2=cam.y+h+100;
+
+    // --- PARKS ---
+    for(let p of parks){
+        if(p.x+p.w<vx1||p.x>vx2||p.y+p.h<vy1||p.y>vy2)continue;
+        // Grass gradient
+        let g=X.createLinearGradient(p.x,p.y,p.x,p.y+p.h);
+        let gr1=Math.floor(40*ambient),gg1=Math.floor(85*ambient),gb1=Math.floor(25*ambient);
+        let gr2=Math.floor(35*ambient),gg2=Math.floor(70*ambient),gb2=Math.floor(20*ambient);
+        g.addColorStop(0,`rgb(${gr1},${gg1},${gb1})`);
+        g.addColorStop(1,`rgb(${gr2},${gg2},${gb2})`);
+        X.fillStyle=g;
+        X.fillRect(p.x,p.y,p.w,p.h);
+        // Trees
+        let tps=treePosCache[p.name]||[];
+        for(let t of tps){
+            if(t.x<vx1||t.x>vx2||t.y<vy1||t.y>vy2)continue;
+            // Shadow
+            X.fillStyle=`rgba(0,0,0,${0.2*ambient})`;
+            X.beginPath();X.ellipse(t.x+3,t.y+4,t.r,t.r*.7,0,0,6.28);X.fill();
+            // Canopy
+            let tr=Math.floor(25*ambient),tg=Math.floor(65*ambient),tb=Math.floor(15*ambient);
+            X.fillStyle=`rgb(${tr},${tg},${tb})`;
+            X.beginPath();X.arc(t.x,t.y,t.r,0,6.28);X.fill();
+            // Highlight
+            X.fillStyle=`rgba(100,180,60,${0.2*ambient})`;
+            X.beginPath();X.arc(t.x-1,t.y-1,t.r*.5,0,6.28);X.fill();
+        }
+        // Park name
+        X.fillStyle=`rgba(255,255,255,${0.35*ambient})`;
+        X.font='bold 11px Courier New';X.textAlign='center';
+        X.fillText(p.name,p.x+p.w/2,p.y+p.h/2+4);
+    }
+
+    // --- RIVER ---
+    X.beginPath();
+    for(let i=0;i<riverPath.length;i++){
+        let x=riverPath[i].x-RW/2;if(i===0)X.moveTo(x,riverPath[i].y);else X.lineTo(x,riverPath[i].y);
+    }
+    for(let i=riverPath.length-1;i>=0;i--)X.lineTo(riverPath[i].x+RW/2,riverPath[i].y);
+    X.closePath();
+    let rg=X.createLinearGradient(3200,0,3600,0);
+    let rb=Math.floor(22*ambient),rgg=Math.floor(55*ambient),rbl=Math.floor(88*ambient);
+    rg.addColorStop(0,`rgb(${rb},${rgg},${rbl})`);
+    rg.addColorStop(.5,`rgb(${rb+10},${rgg+10},${rbl+15})`);
+    rg.addColorStop(1,`rgb(${rb},${rgg},${rbl})`);
+    X.fillStyle=rg;X.fill();
+    // Animated water
+    let st=gameTime;
+    X.fillStyle=`rgba(120,180,220,${0.08*ambient})`;
+    for(let i=0;i<riverPath.length-1;i++){
+        for(let t=0;t<1;t+=.1){
+            let x=riverPath[i].x+t*(riverPath[i+1].x-riverPath[i].x);
+            let y=riverPath[i].y+t*(riverPath[i+1].y-riverPath[i].y);
+            if(x<vx1-50||x>vx2+50||y<vy1-50||y>vy2+50)continue;
+            let sh=Math.sin(st*1.5+x*.04+y*.02)*25;
+            X.fillRect(x+sh-35,y-1.5,70,3);
+        }
+    }
+    // Riverbank edges
+    X.strokeStyle=`rgba(60,50,40,${0.5*ambient})`;X.lineWidth=4;
+    X.beginPath();
+    for(let i=0;i<riverPath.length;i++){let x=riverPath[i].x-RW/2;if(i===0)X.moveTo(x,riverPath[i].y);else X.lineTo(x,riverPath[i].y)}
+    X.stroke();
+    X.beginPath();
+    for(let i=0;i<riverPath.length;i++){let x=riverPath[i].x+RW/2;if(i===0)X.moveTo(x,riverPath[i].y);else X.lineTo(x,riverPath[i].y)}
+    X.stroke();
+
+    // --- ROADS ---
+    // Pass 1: Sidewalks (wider strip behind road)
+    let swC=Math.floor(140*ambient),swC2=Math.floor(130*ambient);
+    for(let r of roads){
+        X.strokeStyle=`rgb(${swC},${swC2},${Math.floor(120*ambient)})`;
+        X.lineWidth=r.w+18;X.lineCap='round';X.lineJoin='round';
+        X.beginPath();
+        for(let i=0;i<r.pts.length;i++){if(i===0)X.moveTo(r.pts[i].x,r.pts[i].y);else X.lineTo(r.pts[i].x,r.pts[i].y)}
+        X.stroke();
+    }
+    // Pass 2: Intersection sidewalk fills
+    for(let ix of intersections){
+        X.fillStyle=`rgb(${swC},${swC2},${Math.floor(120*ambient)})`;
+        X.beginPath();X.arc(ix.x,ix.y,ix.r+10,0,6.28);X.fill();
+    }
+    // Pass 3: Road surfaces
+    for(let r of roads){
+        let rc=r.major?Math.floor(52*ambient):Math.floor(48*ambient);
+        X.strokeStyle=`rgb(${rc},${rc},${rc})`;
+        X.lineWidth=r.w;X.lineCap='round';X.lineJoin='round';
+        X.beginPath();
+        for(let i=0;i<r.pts.length;i++){if(i===0)X.moveTo(r.pts[i].x,r.pts[i].y);else X.lineTo(r.pts[i].x,r.pts[i].y)}
+        X.stroke();
+    }
+    // Pass 4: Intersection road fills (smooth joins)
+    for(let ix of intersections){
+        let maxW=0;for(let ri of ix.roads)maxW=Math.max(maxW,roads[ri].w);
+        let isMajor=ix.roads.some(ri=>roads[ri].major);
+        let rc=isMajor?Math.floor(52*ambient):Math.floor(50*ambient);
+        X.fillStyle=`rgb(${rc},${rc},${rc})`;
+        X.beginPath();X.arc(ix.x,ix.y,maxW/2+4,0,6.28);X.fill();
+    }
+    // Pass 5: Curb lines (sidewalk edges)
+    for(let r of roads){
+        X.strokeStyle=`rgba(170,165,150,${0.35*ambient})`;X.lineWidth=1.5;X.lineCap='round';
+        for(let side of[-1,1]){
+            X.beginPath();
+            for(let i=0;i<r.pts.length;i++){
+                let nx=0,ny=0;
+                if(i<r.pts.length-1){let dx=r.pts[i+1].x-r.pts[i].x,dy=r.pts[i+1].y-r.pts[i].y,l=Math.hypot(dx,dy)||1;nx=-dy/l;ny=dx/l}
+                else if(i>0){let dx=r.pts[i].x-r.pts[i-1].x,dy=r.pts[i].y-r.pts[i-1].y,l=Math.hypot(dx,dy)||1;nx=-dy/l;ny=dx/l}
+                let x=r.pts[i].x+nx*side*(r.w/2+9),y=r.pts[i].y+ny*side*(r.w/2+9);
+                if(i===0)X.moveTo(x,y);else X.lineTo(x,y);
+            }
+            X.stroke();
+        }
+    }
+    // Pass 6: Center dashes and markings
+    for(let r of roads){
+        X.strokeStyle=`rgba(150,140,120,${0.35*ambient})`;
+        X.lineWidth=1.5;X.setLineDash([18,14]);X.lineCap='butt';
+        X.beginPath();
+        for(let i=0;i<r.pts.length;i++){if(i===0)X.moveTo(r.pts[i].x,r.pts[i].y);else X.lineTo(r.pts[i].x,r.pts[i].y)}
+        X.stroke();X.setLineDash([]);
+        // Edge lines for major roads
+        if(r.major){
+            X.strokeStyle=`rgba(200,190,170,${0.2*ambient})`;X.lineWidth=1;X.lineCap='round';
+            for(let side of[-1,1]){
+                X.beginPath();
+                for(let i=0;i<r.pts.length;i++){
+                    let nx=0,ny=0;
+                    if(i<r.pts.length-1){let dx=r.pts[i+1].x-r.pts[i].x,dy=r.pts[i+1].y-r.pts[i].y,l=Math.hypot(dx,dy)||1;nx=-dy/l;ny=dx/l}
+                    let x=r.pts[i].x+nx*side*r.w/2*.9,y=r.pts[i].y+ny*side*r.w/2*.9;
+                    if(i===0)X.moveTo(x,y);else X.lineTo(x,y);
+                }
+                X.stroke();
+            }
+        }
+    }
+
+    // --- BRIDGES ---
+    for(let b of bridges){
+        let rx=getRiverX(b.y);
+        let bw=RW+50,bh=b.w||40;
+        // Shadow
+        X.fillStyle='rgba(0,0,0,.25)';
+        X.fillRect(rx-bw/2+4,b.y-bh/2+4,bw,bh);
+        // Surface
+        if(b.stone){
+            X.fillStyle=`rgb(${Math.floor(130*ambient)},${Math.floor(120*ambient)},${Math.floor(100*ambient)})`;
+        }else if(b.rail){
+            X.fillStyle=`rgb(${Math.floor(70*ambient)},${Math.floor(70*ambient)},${Math.floor(70*ambient)})`;
+        }else{
+            X.fillStyle=`rgb(${Math.floor(75*ambient)},${Math.floor(75*ambient)},${Math.floor(75*ambient)})`;
+        }
+        X.fillRect(rx-bw/2,b.y-bh/2,bw,bh);
+        // Railings
+        X.fillStyle=`rgba(120,120,120,${ambient})`;
+        X.fillRect(rx-bw/2,b.y-bh/2-2,bw,2.5);
+        X.fillRect(rx-bw/2,b.y+bh/2,bw,2.5);
+        // Pillars for Charles Bridge
+        if(b.stone){
+            for(let px=rx-bw/2+15;px<rx+bw/2;px+=22){
+                X.fillStyle=`rgba(110,100,80,${ambient})`;
+                X.fillRect(px-3,b.y-bh/2-1,6,bh+2);
+            }
+        }
+        // Name
+        X.fillStyle=`rgba(180,180,180,${0.7*ambient})`;X.font='9px Courier New';X.textAlign='center';
+        X.fillText(b.name,rx,b.y+3);
+    }
+
+    // --- BUILDINGS ---
+    for(let b of buildings){
+        if(b.x+b.w<vx1||b.x>vx2||b.y+b.h<vy1||b.y>vy2)continue;
+        let sh=b.floors*2;
+        // Shadow
+        X.fillStyle=`rgba(0,0,0,${0.25*ambient})`;
+        X.fillRect(b.x+sh,b.y+sh,b.w,b.h);
+        // Parse color and apply ambient
+        let bc=b.color;
+        let r=parseInt(bc.slice(1,3),16),g=parseInt(bc.slice(3,5),16),bl=parseInt(bc.slice(5,7),16);
+        r=Math.floor(r*ambient);g=Math.floor(g*ambient);bl=Math.floor(bl*ambient);
+        // Wall
+        X.fillStyle=`rgb(${r},${g},${bl})`;
+        X.fillRect(b.x,b.y,b.w,b.h);
+        // Roof line
+        X.fillStyle=`rgb(${Math.max(0,r-20)},${Math.max(0,g-20)},${Math.max(0,bl-20)})`;
+        X.fillRect(b.x,b.y,b.w,3);
+        // Side edge (3D effect)
+        X.fillStyle=`rgb(${Math.max(0,r-30)},${Math.max(0,g-30)},${Math.max(0,bl-30)})`;
+        X.fillRect(b.x+b.w-2,b.y,2,b.h);
+        // Windows
+        let nightGlow=1-dayPhase;
+        let winAlpha=0.15+nightGlow*0.5;
+        let winR=Math.floor(255*(.3+nightGlow*.7)),winG=Math.floor(230*(.3+nightGlow*.6)),winB=Math.floor(150*(.2+nightGlow*.3));
+        X.fillStyle=`rgba(${winR},${winG},${winB},${winAlpha})`;
+        for(let wx=b.x+5;wx<b.x+b.w-5;wx+=10)
+            for(let wy=b.y+5;wy<b.y+b.h-5;wy+=10)
+                X.fillRect(wx,wy,4,4);
+        // Border
+        X.strokeStyle=`rgba(0,0,0,${0.15*ambient})`;X.lineWidth=.5;
+        X.strokeRect(b.x,b.y,b.w,b.h);
+    }
+
+    // --- LANDMARKS ---
+    for(let lm of landmarks){
+        if(lm.x+(lm.w||0)<vx1-150||lm.x>vx2+150||lm.y+(lm.h||0)<vy1-150||lm.y>vy2+150)continue;
+        if(lm.type==='castle'){
+            X.fillStyle=`rgba(0,0,0,${.15*ambient})`;X.fillRect(lm.x+5,lm.y+5,lm.w,lm.h);
+            let cr=parseInt(lm.color.slice(1,3),16),cg=parseInt(lm.color.slice(3,5),16),cb=parseInt(lm.color.slice(5,7),16);
+            X.fillStyle=`rgb(${Math.floor(cr*ambient)},${Math.floor(cg*ambient)},${Math.floor(cb*ambient)})`;
+            X.fillRect(lm.x,lm.y,lm.w,lm.h);
+            X.strokeStyle=`rgba(80,70,60,${ambient})`;X.lineWidth=2;X.strokeRect(lm.x,lm.y,lm.w,lm.h);
+            // Towers
+            for(let tx=lm.x;tx<=lm.x+lm.w;tx+=lm.w/3){
+                X.fillStyle=`rgba(90,60,30,${ambient})`;
+                X.fillRect(tx-6,lm.y-12,12,lm.h*.3);
+                // Battlements
+                for(let by=lm.y-12;by<lm.y;by+=6)X.fillRect(tx-8,by,16,3);
+            }
+        }else if(lm.type==='square'||lm.type==='boulevard'){
+            let sw=lm.w,sh=lm.h;
+            X.fillStyle=`rgb(${Math.floor(80*ambient)},${Math.floor(78*ambient)},${Math.floor(72*ambient)})`;
+            X.fillRect(lm.x-sw/2,lm.y-sh/2,sw,sh);
+            X.fillStyle=`rgb(${Math.floor(90*ambient)},${Math.floor(88*ambient)},${Math.floor(80*ambient)})`;
+            X.fillRect(lm.x-sw/2+4,lm.y-sh/2+4,sw-8,sh-8);
+        }else if(lm.type==='tower'){
+            X.fillStyle=`rgba(100,100,100,${ambient})`;
+            X.beginPath();X.arc(lm.x,lm.y,12,0,6.28);X.fill();
+            X.fillStyle=`rgba(160,160,160,${ambient})`;
+            X.beginPath();X.arc(lm.x,lm.y,6,0,6.28);X.fill();
+            // Light beacon at night
+            if(dayPhase<.5){
+                X.fillStyle=`rgba(255,50,50,${(1-dayPhase*2)*(.5+Math.sin(gameTime*3)*.3)})`;
+                X.beginPath();X.arc(lm.x,lm.y,3,0,6.28);X.fill();
+            }
+        }else if(lm.type==='station'){
+            X.fillStyle=`rgb(${Math.floor(65*ambient)},${Math.floor(60*ambient)},${Math.floor(55*ambient)})`;
+            X.fillRect(lm.x-lm.w/2,lm.y-lm.h/2,lm.w,lm.h);
+            X.strokeStyle=`rgba(120,110,100,${.5*ambient})`;X.lineWidth=1.5;
+            for(let ry=lm.y-lm.h/2+8;ry<lm.y+lm.h/2;ry+=10){
+                X.beginPath();X.moveTo(lm.x-lm.w/2,ry);X.lineTo(lm.x+lm.w/2,ry);X.stroke();
+            }
+        }else if(lm.type==='museum'){
+            X.fillStyle=`rgba(0,0,0,${.15*ambient})`;X.fillRect(lm.x-lm.w/2+4,lm.y-lm.h/2+4,lm.w,lm.h);
+            let cr=parseInt(lm.color.slice(1,3),16),cg=parseInt(lm.color.slice(3,5),16),cb=parseInt(lm.color.slice(5,7),16);
+            X.fillStyle=`rgb(${Math.floor(cr*ambient)},${Math.floor(cg*ambient)},${Math.floor(cb*ambient)})`;
+            X.fillRect(lm.x-lm.w/2,lm.y-lm.h/2,lm.w,lm.h);
+            // Columns
+            X.fillStyle=`rgba(200,190,170,${.3*ambient})`;
+            for(let cx=lm.x-lm.w/2+10;cx<lm.x+lm.w/2;cx+=15)X.fillRect(cx,lm.y-lm.h/2,3,lm.h);
+        }else if(lm.type==='metro'){
+            X.fillStyle=`rgba(0,160,0,${.6*ambient})`;
+            X.beginPath();X.arc(lm.x,lm.y,8,0,6.28);X.fill();
+            X.fillStyle='#fff';X.font='bold 8px sans-serif';X.textAlign='center';
+            X.fillText('M',lm.x,lm.y+3);
+        }
+        // Label
+        X.fillStyle=`rgba(255,255,255,${0.85*ambient})`;
+        X.font='bold 11px Courier New';X.textAlign='center';
+        X.shadowColor='#000';X.shadowBlur=5;
+        X.fillText(lm.label,lm.x,lm.y-(lm.h||0)/2-10);
+        X.shadowBlur=0;
+    }
+
+    // Road names
+    X.font='9px Courier New';X.textAlign='center';
+    X.fillStyle=`rgba(200,200,200,${.3*ambient})`;
+    for(let r of roads){
+        if(r.pts.length<2)continue;
+        let mi=Math.floor(r.pts.length/2);
+        let mx=r.pts[mi].x,my=r.pts[mi].y;
+        if(mx<vx1||mx>vx2||my<vy1||my>vy2)continue;
+        X.save();X.translate(mx,my);
+        let a=Math.atan2(r.pts[mi].y-r.pts[mi-1].y,r.pts[mi].x-r.pts[mi-1].x);
+        if(a>Math.PI/2||a<-Math.PI/2)a+=Math.PI;
+        X.rotate(a);X.fillText(r.name,0,-r.w/2-6);X.restore();
+    }
+
+    // --- STREETLIGHTS (night glow) ---
+    if(dayPhase<0.7){
+        let lightAlpha=(1-dayPhase/0.7)*0.35;
+        for(let sl of streetlights){
+            if(sl.x<vx1-60||sl.x>vx2+60||sl.y<vy1-60||sl.y>vy2+60)continue;
+            let lg=X.createRadialGradient(sl.x,sl.y,0,sl.x,sl.y,45);
+            lg.addColorStop(0,`rgba(255,230,150,${lightAlpha})`);
+            lg.addColorStop(1,'rgba(255,230,150,0)');
+            X.fillStyle=lg;X.fillRect(sl.x-45,sl.y-45,90,90);
+            // Pole
+            X.fillStyle=`rgba(80,80,80,${ambient})`;
+            X.fillRect(sl.x-1,sl.y-1,2,2);
+        }
+    }
+
+    // Skid marks
+    for(let s of player.skidMarks){
+        let al=Math.max(0,(1-s.a/20)*.35);
+        X.fillStyle=`rgba(20,20,20,${al})`;X.fillRect(s.x-2,s.y-2,4,4);
+    }
+
+    // --- VEHICLES ---
+    let allV=[...vehicles,...police];
+    for(let v of allV){
+        if(v.x<vx1-50||v.x>vx2+50||v.y<vy1-50||v.y>vy2+50)continue;
+        drawCar(v,ambient);
+    }
+
+    // --- PEDESTRIANS ---
+    for(let p of peds){
+        if(p.x<vx1-15||p.x>vx2+15||p.y<vy1-15||p.y>vy2+15)continue;
+        X.fillStyle=`rgba(0,0,0,${.2*ambient})`;
+        X.beginPath();X.ellipse(p.x+1,p.y+2,4,3,0,0,6.28);X.fill();
+        X.fillStyle=p.shirt;X.fillRect(p.x-3,p.y-3,6,7);
+        X.fillStyle=p.skin;X.beginPath();X.arc(p.x,p.y-5,3,0,6.28);X.fill();
+        if(p.panic){X.fillStyle='#f00';X.font='bold 9px sans-serif';X.textAlign='center';X.fillText('!',p.x,p.y-11)}
+    }
+
+    // --- PLAYER ON FOOT ---
+    if(player.onFoot&&!player.inVehicle){
+        X.fillStyle='#ff6600';X.beginPath();X.arc(player.x,player.y,7,0,6.28);X.fill();
+        X.fillStyle='#d4a574';X.beginPath();X.arc(player.x,player.y-6,4,0,6.28);X.fill();
+        X.strokeStyle='#ff6600';X.lineWidth=2;
+        X.beginPath();X.moveTo(player.x,player.y);
+        X.lineTo(player.x+Math.cos(player.angle)*14,player.y+Math.sin(player.angle)*14);X.stroke();
+    }
+
+    // --- HEADLIGHT BEAMS (night) ---
+    if(dayPhase<0.6&&player.inVehicle&&player.vehicle){
+        let v=player.vehicle;
+        let beamLen=120+Math.abs(v.speed)*.3;
+        let lg=X.createRadialGradient(
+            v.x+Math.cos(v.angle)*20,v.y+Math.sin(v.angle)*20,5,
+            v.x+Math.cos(v.angle)*beamLen*.5,v.y+Math.sin(v.angle)*beamLen*.5,beamLen*.6
+        );
+        let ba=(1-dayPhase/0.6)*0.15;
+        lg.addColorStop(0,`rgba(255,255,200,${ba})`);
+        lg.addColorStop(1,'rgba(255,255,200,0)');
+        X.fillStyle=lg;
+        X.beginPath();
+        X.moveTo(v.x,v.y);
+        X.lineTo(v.x+Math.cos(v.angle-.3)*beamLen,v.y+Math.sin(v.angle-.3)*beamLen);
+        X.lineTo(v.x+Math.cos(v.angle+.3)*beamLen,v.y+Math.sin(v.angle+.3)*beamLen);
+        X.closePath();X.fill();
+    }
+
+    X.restore();
+
+    // --- Night overlay ---
+    if(dayPhase<0.5){
+        X.fillStyle=`rgba(0,0,20,${(1-dayPhase*2)*0.25})`;
+        X.fillRect(0,0,w,h);
+    }
+
+    renderHUD();
+}
+
+function drawCar(v,amb){
+    X.save();X.translate(v.x,v.y);X.rotate(v.angle+Math.PI/2);
+    let w=v.type.w,h=v.type.h;
+    let col=v.colorVar||v.type.color;
+    // Parse color for ambient
+    let r,g,b;
+    if(col[0]==='#'){r=parseInt(col.slice(1,3),16);g=parseInt(col.slice(3,5),16);b=parseInt(col.slice(5,7),16)}
+    else{r=g=b=128}
+    r=Math.floor(r*amb);g=Math.floor(g*amb);b=Math.floor(b*amb);
+
+    // Shadow
+    X.fillStyle=`rgba(0,0,0,${.25*amb})`;
+    X.beginPath();
+    X.roundRect(-w/2+3,-h/2+3,w,h,3);X.fill();
+    // Body
+    X.fillStyle=`rgb(${r},${g},${b})`;
+    X.beginPath();X.roundRect(-w/2,-h/2,w,h,3);X.fill();
+    // Darker bottom half
+    X.fillStyle=`rgba(0,0,0,.12)`;
+    X.fillRect(-w/2,2,w,h/2-2);
+    // Windshield
+    X.fillStyle=`rgba(${Math.floor(100*amb)},${Math.floor(160*amb)},${Math.floor(210*amb)},.45)`;
+    X.beginPath();X.roundRect(-w/2+3,-h/2+5,w-6,h*.18,2);X.fill();
+    // Rear window
+    X.fillStyle=`rgba(${Math.floor(80*amb)},${Math.floor(130*amb)},${Math.floor(180*amb)},.35)`;
+    X.fillRect(-w/2+3,h/2-h*.18-2,w-6,h*.14);
+    // Headlights
+    let hlBright=dayPhase<.6?(1-dayPhase/.6):.0;
+    X.fillStyle=`rgba(255,255,${Math.floor(180+hlBright*75)},${.5+hlBright*.5})`;
+    X.fillRect(-w/2+1,-h/2,4,3);X.fillRect(w/2-5,-h/2,4,3);
+    // Taillights
+    X.fillStyle=`rgba(255,30,30,${.5+hlBright*.3})`;
+    X.fillRect(-w/2+1,h/2-3,4,3);X.fillRect(w/2-5,h/2-3,4,3);
+    // Police
+    if(v.type.isPolice||v.isPolice){
+        let sc=Math.sin(v.siren||0)>.0?'rgba(255,0,0,.8)':'rgba(0,0,255,.8)';
+        if(v.chasing){X.fillStyle=sc;X.fillRect(-w/2+2,-3,w-4,6)}
+        // Stripe
+        X.fillStyle=`rgba(0,100,0,${.5*amb})`;X.fillRect(-w/2+1,0,w-2,2);
+    }
+    // Taxi
+    if(v.type.isTaxi){X.fillStyle=`rgba(0,0,0,${.5*amb})`;X.fillRect(-3,-1,6,3)}
+    // Tram
+    if(v.type.isTram){
+        X.strokeStyle=`rgba(255,255,255,${.3*amb})`;X.lineWidth=1;
+        X.strokeRect(-w/2+1,-h/2+1,w-2,h-2);
+        // Windows
+        X.fillStyle=`rgba(180,220,255,${.3*amb})`;
+        for(let wy=-h/2+10;wy<h/2-10;wy+=8)X.fillRect(-w/2+2,wy,w-4,4);
+    }
+    // Player highlight
+    if(v===player.vehicle){
+        X.strokeStyle=`rgba(255,200,0,${.6+Math.sin(gameTime*4)*.2})`;
+        X.lineWidth=2;X.beginPath();X.roundRect(-w/2-2,-h/2-2,w+4,h+4,4);X.stroke();
+    }
+    X.restore();
+}
+
+// --- HUD ---
+function renderHUD(){
+    if(player.inVehicle&&player.vehicle){
+        let k=Math.abs(Math.round(player.vehicle.speed*.8));
+        document.getElementById('speed-display').textContent=k+' km/h';
+        document.getElementById('vehicle-info').textContent=player.vehicle.type.name;
+    }else{
+        document.getElementById('speed-display').textContent='Pěšky';
+        document.getElementById('vehicle-info').textContent='';
+    }
+    let we=document.getElementById('wanted-display'),st='';
+    for(let i=0;i<5;i++)st+=i<player.wanted?'<span class="active">★</span>':'★';
+    we.innerHTML=st;
+    document.getElementById('location-display').textContent=getLocName(player.x,player.y);
+    document.getElementById('stats-display').textContent='$'+Math.round(score);
+    renderMinimap();
+}
+
+function getLocName(x,y){
+    let n='Praha',nd=Infinity;
+    for(let l of landmarks){let d=Math.hypot(x-l.x,y-l.y);if(d<nd&&d<350){nd=d;n=l.label}}
+    if(nd>180)for(let r of roads)for(let i=0;i<r.pts.length-1;i++){
+        let d=ptSegDist(x,y,r.pts[i].x,r.pts[i].y,r.pts[i+1].x,r.pts[i+1].y);
+        if(d<nd&&d<80){nd=d;n=r.name}}
+    return n;
+}
+
+function renderMinimap(){
+    let mw=MC.width,mh=MC.height;
+    let sc=mw/1400;
+    let ox=player.x-700,oy=player.y-700;
+    MX.fillStyle='rgba(20,30,15,.9)';MX.fillRect(0,0,mw,mh);
+    // River
+    MX.strokeStyle='rgba(30,70,110,.8)';MX.lineWidth=RW*sc;MX.lineCap='round';
+    MX.beginPath();
+    for(let i=0;i<riverPath.length;i++){let x=(riverPath[i].x-ox)*sc,y=(riverPath[i].y-oy)*sc;
+        if(i===0)MX.moveTo(x,y);else MX.lineTo(x,y)}
+    MX.stroke();
+    // Roads
+    MX.strokeStyle='rgba(100,100,90,.6)';MX.lineWidth=1.5;
+    for(let r of roads){MX.beginPath();
+        for(let i=0;i<r.pts.length;i++){let x=(r.pts[i].x-ox)*sc,y=(r.pts[i].y-oy)*sc;
+            if(i===0)MX.moveTo(x,y);else MX.lineTo(x,y)}
+        MX.lineWidth=r.major?2:1;MX.stroke()}
+    // Police
+    for(let c of police){let cx=(c.x-ox)*sc,cy=(c.y-oy)*sc;
+        if(cx>0&&cx<mw&&cy>0&&cy<mh){MX.fillStyle=c.chasing?'#f00':'#66f';MX.fillRect(cx-2,cy-2,4,4)}}
+    // Player
+    let px=(player.x-ox)*sc,py=(player.y-oy)*sc;
+    MX.fillStyle='#fc0';MX.beginPath();MX.arc(px,py,4,0,6.28);MX.fill();
+    MX.strokeStyle='#fc0';MX.lineWidth=1.5;MX.beginPath();
+    MX.moveTo(px,py);MX.lineTo(px+Math.cos(player.angle)*12,py+Math.sin(player.angle)*12);MX.stroke();
+    // Round mask
+    MX.globalCompositeOperation='destination-in';
+    MX.fillStyle='#fff';MX.beginPath();MX.arc(mw/2,mh/2,mw/2,0,6.28);MX.fill();
+    MX.globalCompositeOperation='source-over';
+}
+
+// ============================================================
+// GAME LOOP
+// ============================================================
+function loop(t){
+    dt=Math.min(.05,(t-lt)/1000);lt=t;
+    update(dt);render();
+    requestAnimationFrame(loop);
+}
+
+function showControls(){document.getElementById('controls-info').style.display='flex'}
+function hideControls(){document.getElementById('controls-info').style.display='none'}
+
+function startGame(){
+    document.getElementById('menu').style.display='none';
+    document.getElementById('hud').style.display='block';
+    if(!running){
+        running=true;addBridgeRoads();buildIntersections();genBuildings();spawnVehicles();spawnPeds();spawnPolice();
+        score=1000;player.wanted=0;gameTime=0;dayPhase=1;
+        showMsg("Vítej v Praze! F=nastoupit/vystoupit, E=ukrást auto");
+    }else running=true;
+}
+
+lt=performance.now();
+requestAnimationFrame(loop);
+</script>
 </body>
 </html>
