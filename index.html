@@ -55,7 +55,7 @@ canvas{display:block}
 <div id="menu">
 <h1>PRAGUE</h1>
 <h2>CRIME CITY</h2>
-<p class="ver">v2.0 - Realistic Edition</p>
+<p class="ver">v2.5 - Connected City</p>
 <button class="menu-btn" onclick="startGame()">HRÁT</button>
 <button class="menu-btn" onclick="showControls()">OVLÁDÁNÍ</button>
 </div>
@@ -296,6 +296,38 @@ const roads=[
     {pts:[{x:6800,y:0},{x:6800,y:1000},{x:6800,y:2000},{x:6800,y:3000},{x:6800,y:4000},{x:6800,y:5000},{x:6800,y:6000},{x:6800,y:7000}],w:50,name:"Průmyslová",major:true},
 ];
 
+// === INTERSECTION GRAPH ===
+let intersections=[];
+function buildIntersections(){
+    intersections=[];
+    const SNAP=60;
+    let allPts=[];
+    for(let ri=0;ri<roads.length;ri++)
+        for(let pi=0;pi<roads[ri].pts.length;pi++)
+            allPts.push({x:roads[ri].pts[pi].x,y:roads[ri].pts[pi].y,ri,pi,ref:roads[ri].pts[pi]});
+    let assigned=new Array(allPts.length).fill(-1);
+    let clusters=[];
+    for(let i=0;i<allPts.length;i++){
+        if(assigned[i]>=0)continue;
+        let cl=[i];assigned[i]=clusters.length;
+        for(let j=i+1;j<allPts.length;j++){
+            if(assigned[j]>=0||allPts[j].ri===allPts[i].ri)continue;
+            // Check distance to any member of the cluster
+            let near=false;
+            for(let ci of cl){if(Math.hypot(allPts[ci].x-allPts[j].x,allPts[ci].y-allPts[j].y)<SNAP){near=true;break}}
+            if(near){cl.push(j);assigned[j]=clusters.length}
+        }
+        if(cl.length>1)clusters.push(cl);
+    }
+    for(let cl of clusters){
+        let sx=0,sy=0,maxW=0,roadSet=new Set();
+        for(let idx of cl){sx+=allPts[idx].x;sy+=allPts[idx].y;roadSet.add(allPts[idx].ri);maxW=Math.max(maxW,roads[allPts[idx].ri].w)}
+        sx/=cl.length;sy/=cl.length;
+        for(let idx of cl){allPts[idx].ref.x=sx;allPts[idx].ref.y=sy}
+        intersections.push({x:sx,y:sy,r:maxW/2+8,roads:[...roadSet]});
+    }
+}
+
 // Parks with more accurate positions
 const parks=[
     {x:2700,y:1200,w:600,h:400,name:"Letenské sady",trees:true},
@@ -373,6 +405,14 @@ function onRoad(x,y){
     for(let b of bridges){let rx=getRiverX(b.y);if(Math.abs(y-b.y)<25&&Math.abs(x-rx)<RW/2+40)return true;}
     return false;
 }
+function onRoadOrIntersection(x,y,margin){
+    margin=margin||0;
+    for(let r of roads)for(let i=0;i<r.pts.length-1;i++)
+        if(ptSegDist(x,y,r.pts[i].x,r.pts[i].y,r.pts[i+1].x,r.pts[i+1].y)<r.w/2+10+margin)return true;
+    for(let ix of intersections)if(Math.hypot(x-ix.x,y-ix.y)<ix.r+margin)return true;
+    for(let b of bridges){let rx=getRiverX(b.y);if(Math.abs(y-b.y)<25+margin&&Math.abs(x-rx)<RW/2+40+margin)return true;}
+    return false;
+}
 
 // --- BUILDINGS ---
 let buildings=[];
@@ -392,20 +432,26 @@ function genBuildings(){
         for(let by=80;by<WH-80;by+=95){
             if(inRiver(bx+35,by+35))continue;
             if(inPark(bx+35,by+35))continue;
-            if(onRoad(bx+35,by+35))continue;
             if(srand()<0.5){
                 let w=35+srand()*55,h=35+srand()*55;
                 let floors=1+Math.floor(srand()*5);
+                let colIdx=Math.floor(srand()*colors.length);
+                let roofR=srand();
+                // Check all corners + center with margin against roads & intersections
+                let blocked=false;
+                let chk=[[bx-5,by-5],[bx+w+5,by-5],[bx-5,by+h+5],[bx+w+5,by+h+5],[bx+w/2,by+h/2]];
+                for(let c of chk){if(onRoadOrIntersection(c[0],c[1],12)){blocked=true;break}}
+                if(blocked)continue;
                 // Taller buildings near center and Pankrác
-                let cx=bx+35,cy=by+35;
+                let cx=bx+w/2,cy=by+h/2;
                 let distCenter=Math.hypot(cx-4000,cy-2500);
                 let distPankrac=Math.hypot(cx-4200,cy-4800);
                 if(distCenter<600)floors+=2;
                 if(distPankrac<400)floors+=4;
                 buildings.push({x:bx,y:by,w,h,
-                    color:colors[Math.floor(srand()*colors.length)],
+                    color:colors[colIdx],
                     floors:Math.min(floors,8),
-                    roofColor:srand()>.5?'#8B4513':'#654321'
+                    roofColor:roofR>.5?'#8B4513':'#654321'
                 });
             }
         }
@@ -727,7 +773,7 @@ function update(dt){
         player.x=Math.max(10,Math.min(WW-10,player.x));player.y=Math.max(10,Math.min(WH-10,player.y));
     }
 
-    // --- AI Traffic ---
+    // --- AI Traffic (intersection-aware) ---
     for(let v of vehicles){
         if(!v.ai||v.occupied)continue;
         if(v.roadIdx>=0){
@@ -735,7 +781,45 @@ function update(dt){
             if(r&&v.segIdx<r.pts.length-1){
                 let tgt=r.pts[v.segIdx+1];
                 let dx=tgt.x-v.x,dy=tgt.y-v.y,d=Math.hypot(dx,dy);
-                if(d<35){v.segIdx++;if(v.segIdx>=r.pts.length-1){v.segIdx=0;v.x=r.pts[0].x;v.y=r.pts[0].y}}
+                if(d<35){
+                    v.segIdx++;
+                    if(v.segIdx>=r.pts.length-1){
+                        // Try switching to a connecting road at intersection
+                        let switched=false;
+                        let endPt=r.pts[r.pts.length-1];
+                        for(let ix of intersections){
+                            if(Math.hypot(ix.x-endPt.x,ix.y-endPt.y)<40){
+                                let cands=ix.roads.filter(ri=>ri!==v.roadIdx);
+                                if(cands.length>0){
+                                    let newRi=cands[Math.floor(Math.random()*cands.length)];
+                                    let nr=roads[newRi];
+                                    let dS=Math.hypot(nr.pts[0].x-ix.x,nr.pts[0].y-ix.y);
+                                    let dE=Math.hypot(nr.pts[nr.pts.length-1].x-ix.x,nr.pts[nr.pts.length-1].y-ix.y);
+                                    v.roadIdx=newRi;
+                                    if(dS<dE){v.segIdx=0;v.x=nr.pts[0].x;v.y=nr.pts[0].y}
+                                    else{v.segIdx=nr.pts.length-2;v.x=nr.pts[nr.pts.length-1].x;v.y=nr.pts[nr.pts.length-1].y;v.reverse=true}
+                                    switched=true;break;
+                                }
+                            }
+                        }
+                        // Also try switching at any mid-road intersection
+                        if(!switched){
+                            for(let ix of intersections){
+                                if(Math.hypot(ix.x-v.x,ix.y-v.y)<60&&Math.random()<0.4){
+                                    let cands=ix.roads.filter(ri=>ri!==v.roadIdx);
+                                    if(cands.length>0){
+                                        let newRi=cands[Math.floor(Math.random()*cands.length)];
+                                        let nr=roads[newRi];
+                                        v.roadIdx=newRi;v.segIdx=0;
+                                        v.x=nr.pts[0].x;v.y=nr.pts[0].y;
+                                        switched=true;break;
+                                    }
+                                }
+                            }
+                        }
+                        if(!switched){v.segIdx=0;v.x=r.pts[0].x;v.y=r.pts[0].y}
+                    }
+                }
                 let ta=Math.atan2(dy,dx),ad=ta-v.angle;
                 while(ad>Math.PI)ad-=6.28;while(ad<-Math.PI)ad+=6.28;
                 v.angle+=ad*2.2*dt;
@@ -887,34 +971,67 @@ function render(){
     X.stroke();
 
     // --- ROADS ---
+    // Pass 1: Sidewalks (wider strip behind road)
+    let swC=Math.floor(140*ambient),swC2=Math.floor(130*ambient);
     for(let r of roads){
-        // Sidewalk
-        X.strokeStyle=`rgba(90,85,75,${0.5*ambient})`;
-        X.lineWidth=r.w+12;X.lineCap='round';X.lineJoin='round';
+        X.strokeStyle=`rgb(${swC},${swC2},${Math.floor(120*ambient)})`;
+        X.lineWidth=r.w+18;X.lineCap='round';X.lineJoin='round';
         X.beginPath();
         for(let i=0;i<r.pts.length;i++){if(i===0)X.moveTo(r.pts[i].x,r.pts[i].y);else X.lineTo(r.pts[i].x,r.pts[i].y)}
         X.stroke();
-        // Road
+    }
+    // Pass 2: Intersection sidewalk fills
+    for(let ix of intersections){
+        X.fillStyle=`rgb(${swC},${swC2},${Math.floor(120*ambient)})`;
+        X.beginPath();X.arc(ix.x,ix.y,ix.r+10,0,6.28);X.fill();
+    }
+    // Pass 3: Road surfaces
+    for(let r of roads){
         let rc=r.major?Math.floor(52*ambient):Math.floor(48*ambient);
         X.strokeStyle=`rgb(${rc},${rc},${rc})`;
-        X.lineWidth=r.w;
+        X.lineWidth=r.w;X.lineCap='round';X.lineJoin='round';
         X.beginPath();
         for(let i=0;i<r.pts.length;i++){if(i===0)X.moveTo(r.pts[i].x,r.pts[i].y);else X.lineTo(r.pts[i].x,r.pts[i].y)}
         X.stroke();
-        // Center dashes
+    }
+    // Pass 4: Intersection road fills (smooth joins)
+    for(let ix of intersections){
+        let maxW=0;for(let ri of ix.roads)maxW=Math.max(maxW,roads[ri].w);
+        let isMajor=ix.roads.some(ri=>roads[ri].major);
+        let rc=isMajor?Math.floor(52*ambient):Math.floor(50*ambient);
+        X.fillStyle=`rgb(${rc},${rc},${rc})`;
+        X.beginPath();X.arc(ix.x,ix.y,maxW/2+4,0,6.28);X.fill();
+    }
+    // Pass 5: Curb lines (sidewalk edges)
+    for(let r of roads){
+        X.strokeStyle=`rgba(170,165,150,${0.35*ambient})`;X.lineWidth=1.5;X.lineCap='round';
+        for(let side of[-1,1]){
+            X.beginPath();
+            for(let i=0;i<r.pts.length;i++){
+                let nx=0,ny=0;
+                if(i<r.pts.length-1){let dx=r.pts[i+1].x-r.pts[i].x,dy=r.pts[i+1].y-r.pts[i].y,l=Math.hypot(dx,dy)||1;nx=-dy/l;ny=dx/l}
+                else if(i>0){let dx=r.pts[i].x-r.pts[i-1].x,dy=r.pts[i].y-r.pts[i-1].y,l=Math.hypot(dx,dy)||1;nx=-dy/l;ny=dx/l}
+                let x=r.pts[i].x+nx*side*(r.w/2+9),y=r.pts[i].y+ny*side*(r.w/2+9);
+                if(i===0)X.moveTo(x,y);else X.lineTo(x,y);
+            }
+            X.stroke();
+        }
+    }
+    // Pass 6: Center dashes and markings
+    for(let r of roads){
         X.strokeStyle=`rgba(150,140,120,${0.35*ambient})`;
-        X.lineWidth=1.5;X.setLineDash([18,14]);
+        X.lineWidth=1.5;X.setLineDash([18,14]);X.lineCap='butt';
         X.beginPath();
         for(let i=0;i<r.pts.length;i++){if(i===0)X.moveTo(r.pts[i].x,r.pts[i].y);else X.lineTo(r.pts[i].x,r.pts[i].y)}
         X.stroke();X.setLineDash([]);
         // Edge lines for major roads
         if(r.major){
-            X.strokeStyle=`rgba(200,190,170,${0.2*ambient})`;X.lineWidth=1;
+            X.strokeStyle=`rgba(200,190,170,${0.2*ambient})`;X.lineWidth=1;X.lineCap='round';
             for(let side of[-1,1]){
                 X.beginPath();
                 for(let i=0;i<r.pts.length;i++){
                     let nx=0,ny=0;
-                    if(i<r.pts.length-1){let dx=r.pts[i+1].x-r.pts[i].x,dy=r.pts[i+1].y-r.pts[i].y,l=Math.hypot(dx,dy);nx=-dy/l;ny=dx/l}
+                    if(i<r.pts.length-1){let dx=r.pts[i+1].x-r.pts[i].x,dy=r.pts[i+1].y-r.pts[i].y,l=Math.hypot(dx,dy)||1;nx=-dy/l;ny=dx/l}
                     let x=r.pts[i].x+nx*side*r.w/2*.9,y=r.pts[i].y+ny*side*r.w/2*.9;
                     if(i===0)X.moveTo(x,y);else X.lineTo(x,y);
                 }
@@ -1272,7 +1389,7 @@ function startGame(){
     document.getElementById('menu').style.display='none';
     document.getElementById('hud').style.display='block';
     if(!running){
-        running=true;genBuildings();spawnVehicles();spawnPeds();spawnPolice();
+        running=true;buildIntersections();genBuildings();spawnVehicles();spawnPeds();spawnPolice();
         score=1000;player.wanted=0;gameTime=0;dayPhase=1;
         showMsg("Vítej v Praze! F=nastoupit/vystoupit, E=ukrást auto");
     }else running=true;
