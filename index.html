@@ -3,162 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Counter-Strike 1.5 Clone</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Svatá Voda: Čertí Apokalypsa</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: #000; font-family: 'Courier New', monospace; cursor: none; }
+        #game-canvas { display: block; width: 100vw; height: 100vh; }
+
+        #crosshair {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 24px; height: 24px; pointer-events: none; z-index: 100;
+        }
+        #crosshair::before, #crosshair::after {
+            content: ''; position: absolute; background: rgba(255,215,0,0.9);
+        }
+        #crosshair::before { width: 2px; height: 24px; left: 11px; top: 0; }
+        #crosshair::after { width: 24px; height: 2px; top: 11px; left: 0; }
+        #crosshair.hidden { display: none; }
+
+        #hud {
+            position: fixed; bottom: 0; left: 0; right: 0; height: 90px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.85));
+            display: none; align-items: flex-end; padding: 10px 20px;
+            z-index: 50; pointer-events: none;
+        }
+        .hud-section { display: flex; align-items: center; }
+        #health-bar-outer {
+            width: 200px; height: 18px; background: rgba(0,0,0,0.6);
+            border: 2px solid #888; border-radius: 3px; overflow: hidden;
+        }
+        #health-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #d33, #f55); transition: width 0.3s; }
+        #lives-display { color: #ffd700; font-size: 22px; margin-left: 15px; letter-spacing: 3px; }
+        #wave-display { color: #aaeeff; font-size: 16px; margin-left: auto; text-shadow: 0 0 8px #58f; }
+        #score-display { color: #fff; font-size: 16px; margin-left: 25px; }
+        #weapon-display { color: #ffe080; font-size: 14px; margin-left: 25px; text-align: right; }
+        #ammo-display { color: #80ffff; font-size: 14px; margin-left: 12px; }
+        #enemies-display { color: #ff8888; font-size: 14px; margin-left: 25px; }
+
+        .announce {
+            position: fixed; left: 50%; transform: translateX(-50%);
+            font-weight: bold; z-index: 60; pointer-events: none;
+            opacity: 0; transition: opacity 0.5s;
+            font-family: 'Courier New', monospace; text-align: center;
+        }
+        #wave-announce { top: 25%; color: #ff4444; font-size: 48px; text-shadow: 0 0 20px #f00, 0 0 40px #f00; }
+        #bonus-announce { top: 42%; color: #ffd700; font-size: 26px; text-shadow: 0 0 15px #fa0; }
+        #angel-message { top: 20%; color: #ffffff; font-size: 30px; text-shadow: 0 0 30px #fff, 0 0 60px #aaf; }
+        #pickup-hint { top: 55%; color: #aaffaa; font-size: 18px; text-shadow: 0 0 10px #0f0; }
+
+        #damage-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none; z-index: 40; opacity: 0;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(255,0,0,0.5) 100%);
+            transition: opacity 0.2s;
+        }
+
+        .screen-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 200; color: #fff;
+        }
+        #menu-screen { background: linear-gradient(135deg, #0a0520, #1a0a3e, #0a0520); }
+        #menu-screen h1 {
+            font-size: 52px; color: #ffd700;
+            text-shadow: 0 0 20px #fa0, 0 0 40px #f80, 0 0 80px #f60;
+            margin-bottom: 8px;
+        }
+        #menu-screen h2 {
+            font-size: 26px; color: #e44;
+            text-shadow: 0 0 15px #f00, 0 0 30px #a00;
+            margin-bottom: 35px;
+        }
+        .subtitle {
+            font-size: 15px; color: #bbb; margin-bottom: 30px;
+            text-align: center; line-height: 1.8; max-width: 500px;
+        }
+        .menu-btn {
+            background: linear-gradient(135deg, #4a2, #283);
+            border: 2px solid #6d4; color: #fff; padding: 15px 50px;
+            font-size: 20px; cursor: pointer; margin: 8px;
+            font-family: 'Courier New', monospace; border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .menu-btn:hover { background: linear-gradient(135deg, #5b3, #394); transform: scale(1.05); }
+        .controls-info {
+            margin-top: 30px; color: #777; font-size: 12px;
+            text-align: center; line-height: 2;
+        }
+        .weapon-list {
+            display: flex; gap: 12px; margin-top: 15px; margin-bottom: 15px; flex-wrap: wrap; justify-content: center;
+        }
+        .weapon-card {
+            background: rgba(255,255,255,0.05); border: 1px solid #555;
+            padding: 8px 12px; border-radius: 4px; font-size: 11px;
+            color: #ccc; text-align: center; min-width: 100px;
+        }
+        .weapon-card .wname { color: #ffd700; font-size: 13px; margin-bottom: 3px; }
+
+        #game-over-screen { background: rgba(20,0,0,0.92); display: none; }
+        #game-over-screen h1 { font-size: 52px; color: #e44; text-shadow: 0 0 30px #f00; margin-bottom: 15px; }
+        #victory-screen { background: rgba(10,10,30,0.92); display: none; }
+        #victory-screen h1 { font-size: 52px; color: #ffd700; text-shadow: 0 0 30px #fa0, 0 0 60px #f80; margin-bottom: 15px; }
+        .final-score { font-size: 26px; color: #ffd700; margin-bottom: 8px; }
+        .final-info { font-size: 16px; color: #aaa; margin-bottom: 25px; }
+
+        #active-bonuses {
+            position: fixed; top: 10px; left: 10px;
+            display: flex; flex-direction: column; gap: 5px;
+            z-index: 50; pointer-events: none;
+        }
+        .active-bonus-item {
+            background: rgba(0,0,0,0.6); border: 1px solid #ffd700;
+            border-radius: 4px; padding: 4px 10px; font-size: 12px;
+            color: #ffd700; display: flex; align-items: center; gap: 6px;
+        }
+        .active-bonus-item .bonus-timer-bar {
+            width: 60px; height: 4px; background: rgba(255,255,255,0.2);
+            border-radius: 2px; overflow: hidden;
+        }
+        .active-bonus-item .bonus-timer-fill {
+            height: 100%; background: #ffd700; transition: width 0.1s linear;
+        }
+    </style>
 </head>
 <body>
-    <div id="game-container">
-        <!-- Main Menu -->
-        <div id="main-menu" class="menu">
-            <h1>COUNTER-STRIKE</h1>
-            <h2>v1.5 Clone</h2>
-            <div class="menu-buttons">
-                <button id="btn-new-game">NOVÁ HRA</button>
-                <button id="btn-controls">OVLÁDÁNÍ</button>
-                <button id="btn-options">NASTAVENÍ</button>
-            </div>
+    <div id="menu-screen" class="screen-overlay">
+        <h1>&#x271D; Svata Voda &#x271D;</h1>
+        <h2>Certi Apokalypsa</h2>
+        <div class="subtitle">
+            Peklo se otevrelo a certi zaplavili svet!<br>
+            Jen ty a posvecena voda muzete zastavit temnotu.<br>
+            Prezij 10 vln demonu a zachran lidstvo!
         </div>
-
-        <!-- Team Selection -->
-        <div id="team-select" class="menu hidden">
-            <h2>VYBER TÝM</h2>
-            <div class="team-buttons">
-                <button id="btn-ct" class="team-btn ct">
-                    <span class="team-name">COUNTER-TERRORISTS</span>
-                    <span class="team-desc">Speciální jednotky</span>
-                </button>
-                <button id="btn-t" class="team-btn t">
-                    <span class="team-name">TERRORISTS</span>
-                    <span class="team-desc">Teroristé</span>
-                </button>
-            </div>
-            <button id="btn-back-main" class="back-btn">ZPĚT</button>
+        <div class="weapon-list">
+            <div class="weapon-card"><div class="wname">Kropenka</div>zakladni zbran</div>
+            <div class="weapon-card"><div class="wname">Svaty Kalich</div>strikacka</div>
+            <div class="weapon-card"><div class="wname">Svecena Pumpa</div>brokovnice</div>
+            <div class="weapon-card"><div class="wname">Nebesky Paprsek</div>laser</div>
+            <div class="weapon-card"><div class="wname">Svaty Granat</div>vybusny</div>
         </div>
-
-        <!-- Controls Info -->
-        <div id="controls-menu" class="menu hidden">
-            <h2>OVLÁDÁNÍ</h2>
-            <div class="controls-list">
-                <div class="control-item"><span>W, A, S, D</span> - Pohyb</div>
-                <div class="control-item"><span>MYŠ</span> - Rozhlížení</div>
-                <div class="control-item"><span>LEVÉ TLAČÍTKO</span> - Střelba</div>
-                <div class="control-item"><span>R</span> - Přebití</div>
-                <div class="control-item"><span>B</span> - Nákup zbraní</div>
-                <div class="control-item"><span>1, 2, 3, 4</span> - Výběr zbraně</div>
-                <div class="control-item"><span>SHIFT</span> - Chůze (tichý pohyb)</div>
-                <div class="control-item"><span>CTRL</span> - Dřep</div>
-                <div class="control-item"><span>SPACE</span> - Skok</div>
-                <div class="control-item"><span>TAB</span> - Skóre</div>
-                <div class="control-item"><span>ESC</span> - Menu</div>
-            </div>
-            <button id="btn-back-controls" class="back-btn">ZPĚT</button>
-        </div>
-
-        <!-- Buy Menu -->
-        <div id="buy-menu" class="menu hidden">
-            <h2>NÁKUP ZBRANÍ</h2>
-            <div class="buy-categories">
-                <div class="buy-category">
-                    <h3>PISTOLE</h3>
-                    <button class="buy-item" data-weapon="glock" data-price="400">Glock 18 - $400</button>
-                    <button class="buy-item" data-weapon="usp" data-price="500">USP - $500</button>
-                    <button class="buy-item" data-weapon="deagle" data-price="650">Desert Eagle - $650</button>
-                </div>
-                <div class="buy-category">
-                    <h3>PUŠKY</h3>
-                    <button class="buy-item" data-weapon="ak47" data-price="2500">AK-47 - $2500</button>
-                    <button class="buy-item" data-weapon="m4a1" data-price="3100">M4A1 - $3100</button>
-                    <button class="buy-item" data-weapon="awp" data-price="4750">AWP - $4750</button>
-                    <button class="buy-item" data-weapon="mp5" data-price="1500">MP5 - $1500</button>
-                </div>
-                <div class="buy-category">
-                    <h3>VYBAVENÍ</h3>
-                    <button class="buy-item" data-weapon="kevlar" data-price="650">Kevlar - $650</button>
-                    <button class="buy-item" data-weapon="helmet" data-price="1000">Kevlar + Helma - $1000</button>
-                    <button class="buy-item" data-weapon="defuse" data-price="200">Defuse Kit - $200</button>
-                </div>
-            </div>
-            <div class="buy-footer">
-                <span id="player-money">$800</span>
-                <button id="btn-close-buy">ZAVŘÍT [B]</button>
-            </div>
-        </div>
-
-        <!-- Scoreboard -->
-        <div id="scoreboard" class="hidden">
-            <h2>SKÓRE</h2>
-            <div class="score-teams">
-                <div class="score-team ct">
-                    <h3>Counter-Terrorists</h3>
-                    <div id="ct-score">0</div>
-                </div>
-                <div class="score-team t">
-                    <h3>Terrorists</h3>
-                    <div id="t-score">0</div>
-                </div>
-            </div>
-            <div id="player-list"></div>
-        </div>
-
-        <!-- Game Canvas -->
-        <canvas id="game-canvas"></canvas>
-
-        <!-- HUD -->
-        <div id="hud" class="hidden">
-            <div id="hud-top">
-                <div id="round-timer">1:45</div>
-                <div id="round-info">
-                    <span id="ct-rounds">0</span> - <span id="t-rounds">0</span>
-                </div>
-            </div>
-            <div id="radar">
-                <canvas id="radar-canvas"></canvas>
-            </div>
-            <div id="hud-bottom">
-                <div id="health-armor">
-                    <div class="hud-item">
-                        <span class="hud-icon">+</span>
-                        <span id="health">100</span>
-                    </div>
-                    <div class="hud-item">
-                        <span class="hud-icon">◈</span>
-                        <span id="armor">0</span>
-                    </div>
-                </div>
-                <div id="ammo">
-                    <span id="ammo-clip">30</span> / <span id="ammo-reserve">90</span>
-                </div>
-                <div id="money">$800</div>
-            </div>
-            <div id="crosshair"></div>
-            <div id="hit-marker" class="hidden"></div>
-            <div id="damage-overlay" class="hidden"></div>
-            <div id="kill-feed"></div>
-        </div>
-
-        <!-- Death Screen -->
-        <div id="death-screen" class="hidden">
-            <h2>ZABIT</h2>
-            <p>Zabil tě: <span id="killer-name">Enemy</span></p>
-            <p>Zbraň: <span id="killer-weapon">AK-47</span></p>
-            <p>Respawn za: <span id="respawn-timer">5</span>s</p>
-        </div>
-
-        <!-- Round End -->
-        <div id="round-end" class="hidden">
-            <h2 id="round-winner"></h2>
-            <p id="round-reason"></p>
+        <button class="menu-btn" id="start-btn">&#x271D; ZAHAJIT BOJ &#x271D;</button>
+        <div class="controls-info">
+            WASD - pohyb &nbsp;|&nbsp; MYS - mireni &nbsp;|&nbsp; LTM - strelba &nbsp;|&nbsp; R - nabijeni<br>
+            1-5 - zbrane &nbsp;|&nbsp; SPACE - skok &nbsp;|&nbsp; E - sebrat predmet &nbsp;|&nbsp; Q - specialni schopnost
         </div>
     </div>
 
-    <script src="js/utils.js"></script>
-    <script src="js/audio.js"></script>
-    <script src="js/weapons.js"></script>
-    <script src="js/map.js"></script>
-    <script src="js/player.js"></script>
-    <script src="js/bot.js"></script>
-    <script src="js/raycaster.js"></script>
+    <div id="game-over-screen" class="screen-overlay">
+        <h1>KONEC HRY</h1>
+        <div class="final-score">Skore: <span id="go-score">0</span></div>
+        <div class="final-info">Vlna: <span id="go-wave">0</span> / 10</div>
+        <button class="menu-btn" id="restart-btn">ZKUSIT ZNOVU</button>
+    </div>
+
+    <div id="victory-screen" class="screen-overlay">
+        <h1>&#x271D; VITEZSTVI! &#x271D;</h1>
+        <div style="color:#ddd;font-size:18px;margin-bottom:8px;">Temnota byla porazena!</div>
+        <div class="final-score">Skore: <span id="vic-score">0</span></div>
+        <button class="menu-btn" id="victory-restart-btn">HRAT ZNOVU</button>
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+    <div id="crosshair" class="hidden"></div>
+    <div id="damage-overlay"></div>
+
+    <div id="hud">
+        <div class="hud-section">
+            <div id="health-bar-outer"><div id="health-bar"></div></div>
+            <div id="lives-display"></div>
+        </div>
+        <div id="enemies-display"></div>
+        <div id="wave-display"></div>
+        <div id="score-display"></div>
+        <div id="weapon-display"></div>
+        <div id="ammo-display"></div>
+    </div>
+
+    <div id="active-bonuses"></div>
+    <div id="wave-announce" class="announce"></div>
+    <div id="bonus-announce" class="announce"></div>
+    <div id="angel-message" class="announce"></div>
+    <div id="pickup-hint" class="announce"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="js/game.js"></script>
-    <script src="js/main.js"></script>
 </body>
 </html>
